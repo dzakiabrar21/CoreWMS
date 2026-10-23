@@ -1,0 +1,46 @@
+@model StoringCreateVm
+@{ ViewData["Title"] = "Checksheet Storing"; }
+<h3 class="mb-3">Checksheet Storing (Inbound)</h3>
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card shadow-sm"><div class="card-body">
+      <form asp-action="Create" method="post">
+        <div asp-validation-summary="All" class="alert alert-danger py-2 @(ViewData.ModelState.IsValid ? "d-none" : "")"></div>
+        <div class="mb-2"><label class="form-label">Part Number</label>
+          <select asp-for="ItemId" class="form-select" required>
+            <option value="">-- pilih --</option>
+            @foreach (var i in Model.Items) { <option value="@i.Id">@i.PartNumber - @i.ItemName</option> }
+          </select></div>
+        <div class="mb-2"><label class="form-label">Lokasi Rak / Floor</label>
+          <select asp-for="LocationId" class="form-select" required>
+            <option value="">-- pilih --</option>
+            @foreach (var l in Model.Locations)
+            {
+              var rem = l.MaxCapacity - l.CurrentQty;
+              <option value="@l.Id" disabled="@(rem <= 0)">@l.LocationCode (@l.ZoneType) - sisa @rem</option>
+            }
+          </select></div>
+        <div class="mb-2"><label class="form-label">Nomor Lot</label><input asp-for="LotNumber" class="form-control" required /></div>
+        <div class="mb-2"><label class="form-label">Tanggal Produksi</label><input asp-for="ProductionDate" type="date" class="form-control" required /></div>
+        <div class="row">
+          <div class="col-6 mb-2"><label class="form-label">Voltase (V)</label><input asp-for="MeasuredVoltage" type="number" step="0.01" class="form-control" required /></div>
+          <div class="col-6 mb-3"><label class="form-label">Qty</label><input asp-for="Qty" type="number" min="1" class="form-control" required /></div>
+        </div>
+        <button class="btn btn-primary w-100">Simpan</button>
+      </form>
+    </div></div>
+  </div>
+  <div class="col-lg-8">
+    <div class="card shadow-sm"><div class="card-header">Riwayat Penerimaan Terakhir</div>
+      <div class="table-responsive"><table class="table table-sm table-striped mb-0 align-middle">
+        <thead><tr><th>Waktu</th><th>Part</th><th>Lot</th><th>Lokasi</th><th>Prod.</th><th>V</th><th>Qty</th><th>Status</th></tr></thead>
+        <tbody>
+        @foreach (var r in Model.Recent)
+        {
+          var cls = r.Status == StockStatus.Normal ? "success" : r.Status == StockStatus.Aging ? "warning text-dark" : "danger";
+          <tr><td>@r.ReceivedAt.ToString("dd/MM HH:mm")</td><td>@r.Item.PartNumber</td><td>@r.LotNumber</td><td>@r.Location.LocationCode</td>
+              <td>@r.ProductionDate.ToString("dd/MM/yy")</td><td>@r.MeasuredVoltage</td><td>@r.Quantity</td><td><span class="badge bg-@cls">@r.Status</span></td></tr>
+        }
+        </tbody></table></div></div>
+  </div>
+</div>

@@ -1,0 +1,37 @@
+@model DashboardVm
+@{ ViewData["Title"] = "Dashboard"; }
+<h3 class="mb-3">Dashboard Gudang Finished Goods</h3>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3"><div class="card shadow-sm"><div class="card-body"><div class="text-muted small">Total Kapasitas</div><div class="fs-3 fw-bold">@Model.TotalCapacity.ToString("N0")</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm"><div class="card-body"><div class="text-muted small">Keterisian</div><div class="fs-3 fw-bold">@Model.OccupancyPct%</div>
+    <div class="progress" style="height:6px"><div class="progress-bar" style="width:@Model.OccupancyPct.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></div></div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm border-warning"><div class="card-body"><div class="text-muted small">Lot Aging Alert</div><div class="fs-3 fw-bold text-warning">@Model.AgingCount</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm"><div class="card-body"><div class="text-muted small">DO Ritase Hari Ini</div><div class="fs-3 fw-bold">@Model.TodayDoCount</div></div></div></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card shadow-sm"><div class="card-header">Status Grid Gudang</div><div class="card-body">
+      <div class="row g-2">
+      @foreach (var t in Model.Tiles)
+      {
+        var bg = t.Color == "danger" ? "bg-danger" : t.Color == "warning" ? "bg-warning" : "bg-success";
+        <div class="col-6 col-md-3"><div class="rounded text-white p-2 @bg @(t.Color=="warning"?"text-dark":"")">
+          <div class="fw-bold small">@t.Code</div><div>@t.Qty / @t.Max</div><span class="badge text-bg-light">@t.Zone</span></div></div>
+      }
+      </div>
+      <div class="small text-muted mt-3"><span class="badge bg-success">Aman</span> <span class="badge bg-warning text-dark">Hampir penuh (&ge;80%)</span> <span class="badge bg-danger">Ada stok aging / drop voltase</span></div>
+    </div></div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card shadow-sm"><div class="card-header">Komposisi Status Stok (unit)</div><div class="card-body"><canvas id="donut"></canvas></div></div>
+  </div>
+</div>
+@section Scripts {
+<script>
+  new Chart(document.getElementById('donut'), {
+    type: 'doughnut',
+    data: { labels: ['Normal', 'Aging', 'Low Voltage'],
+      datasets: [{ data: [@Model.Normal, @Model.Aging, @Model.LowVoltage], backgroundColor: ['#198754', '#ffc107', '#dc3545'] }] }
+  });
+</script>
+}

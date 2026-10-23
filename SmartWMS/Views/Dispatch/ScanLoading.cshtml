@@ -1,0 +1,37 @@
+@model ScanLoadingVm
+@{ ViewData["Title"] = "Poka-Yoke Scan"; }
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Poka-Yoke Loading: @Model.Delivery.DONumber <small class="text-muted fs-6">@Model.Delivery.CustomerName &middot; @Model.Delivery.Ritase</small></h3>
+  <a asp-action="Index" asp-route-date="@Model.Delivery.DeliveryDate.ToString("yyyy-MM-dd")" class="btn btn-outline-secondary btn-sm">Kembali</a>
+</div>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card shadow-sm mb-3"><div class="card-body">
+      <label class="form-label">Scan / ketik barcode (Part Number atau Lot Number)</label>
+      <div class="input-group input-group-lg">
+        <input id="barcode" class="form-control" autofocus autocomplete="off" />
+        <input id="qty" type="number" min="1" value="1" class="form-control" style="max-width:90px" title="Qty sublot" />
+        <button id="btnScan" class="btn btn-primary">Scan</button>
+      </div>
+      <div id="indicator" class="rounded text-center text-white mt-3 d-flex align-items-center justify-content-center fs-4 fw-bold bg-secondary" style="height:140px">MENUNGGU SCAN</div>
+    </div></div>
+    <div class="card shadow-sm"><div class="card-header">Progres Muat</div><div class="card-body" id="progress">
+      @foreach (var l in Model.Lines)
+      {
+        <div class="mb-3" data-item="@l.ItemId"><div class="d-flex justify-content-between"><strong>@l.PartNumber</strong><span class="cnt">@l.Loaded / @l.Requested</span></div>
+          <div class="progress" style="height:18px"><div class="progress-bar" style="width:@(l.Requested==0?0:l.Loaded*100/l.Requested)%"></div></div></div>
+      }
+    </div></div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card shadow-sm"><div class="card-header">Rekomendasi Pengambilan FIFO</div>
+      <ul class="list-group list-group-flush">
+      @foreach (var f in Model.Fifo) { <li class="list-group-item small"><strong>@f.PartNumber</strong> &mdash; Lot @f.LotNumber @@ <strong>@f.Location</strong> &middot; ambil @f.Quantity &middot; prod @f.ProductionDate.ToString("dd/MM/yy")</li> }
+      @if (!Model.Fifo.Any()) { <li class="list-group-item text-muted small">Tidak ada sisa pengambilan.</li> }
+      </ul></div>
+  </div>
+</div>
+@section Scripts {
+<script>var DO_ID = @Model.Delivery.Id;</script>
+<script src="~/js/scan.js"></script>
+}

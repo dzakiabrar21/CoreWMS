@@ -1,0 +1,51 @@
+@model List<Delivery>
+@{
+  ViewData["Title"] = "Dispatch";
+  var date = (DateOnly)ViewBag.Date;
+  var load = (Dictionary<string, int>)ViewBag.Load;
+}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h3 class="mb-0">Heijunka &amp; Outbound Dispatch</h3>
+  <div class="d-flex gap-2">
+    <form method="get" class="d-flex gap-2"><input type="date" name="date" value="@date.ToString("yyyy-MM-dd")" class="form-control" onchange="this.form.submit()" /></form>
+    <a class="btn btn-primary" asp-action="Create" asp-route-date="@date.ToString("yyyy-MM-dd")">+ Buat Rencana Kirim</a>
+  </div>
+</div>
+<ul class="nav nav-tabs" role="tablist">
+  @for (var i = 0; i < Ritases.All.Length; i++)
+  {
+    var r = Ritases.All[i];
+    <li class="nav-item"><button class="nav-link @(i==0?"active":"")" data-bs-toggle="tab" data-bs-target="#rit@(i)" type="button">@r <span class="badge bg-secondary">@load[r]/@IDispatchService.MaxDoPerRitase</span></button></li>
+  }
+</ul>
+<div class="tab-content border border-top-0 bg-white p-3 rounded-bottom">
+@for (var i = 0; i < Ritases.All.Length; i++)
+{
+  var r = Ritases.All[i];
+  var rows = Model.Where(d => d.Ritase == r).ToList();
+  <div class="tab-pane fade @(i==0?"show active":"")" id="rit@(i)">
+  @if (rows.Count == 0) { <p class="text-muted mb-0">Belum ada pengiriman.</p> }
+  else {
+    <table class="table align-middle mb-0"><thead><tr><th>DO</th><th>Pelanggan</th><th>Item</th><th>Status</th><th></th></tr></thead><tbody>
+    @foreach (var d in rows)
+    {
+      var cls = d.Status switch { "COMPLETED" => "success", "IN_PROGRESS" => "primary", "CANCELLED" => "secondary", _ => "info" };
+      <tr><td>@d.DONumber</td><td>@d.CustomerName</td>
+          <td>@foreach (var x in d.Details) { <div class="small">@x.Item.PartNumber: @x.QtyLoaded/@x.QtyRequested</div> }</td>
+          <td><span class="badge bg-@cls">@d.Status</span></td>
+          <td class="text-end">
+          @if (d.Status == DoStatus.Planned || d.Status == DoStatus.InProgress)
+          {
+            <a class="btn btn-sm btn-success" href="/Dispatch/ScanLoading/@d.Id">Mulai Poka-Yoke Scan</a>
+          }
+          @if (d.Status == DoStatus.Planned)
+          {
+            <form asp-action="Cancel" asp-route-id="@d.Id" method="post" class="d-inline"><button class="btn btn-sm btn-outline-danger">Batal</button></form>
+          }
+          </td></tr>
+    }
+    </tbody></table>
+  }
+  </div>
+}
+</div>

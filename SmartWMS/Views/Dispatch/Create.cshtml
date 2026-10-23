@@ -1,0 +1,54 @@
+@model DeliveryCreateVm
+@{ ViewData["Title"] = "Buat Rencana Kirim"; }
+<h3 class="mb-3">Buat Rencana Kirim</h3>
+<form asp-action="Create" method="post" class="card shadow-sm"><div class="card-body">
+  <div asp-validation-summary="All" class="alert alert-danger py-2 @(ViewData.ModelState.IsValid ? "d-none" : "")"></div>
+  <div class="row g-3">
+    <div class="col-md-4"><label class="form-label">Pelanggan</label><input asp-for="CustomerName" class="form-control" list="cust" required />
+      <datalist id="cust"><option value="Astra Otoparts"/><option value="PDC Karawang"/></datalist></div>
+    <div class="col-md-4"><label class="form-label">Tanggal Muat</label><input asp-for="DeliveryDate" type="date" class="form-control" required /></div>
+    <div class="col-md-4"><label class="form-label">Ritase</label>
+      <select asp-for="Ritase" class="form-select">
+        @foreach (var r in Ritases.All) { <option value="@r">@r (terisi @Model.RitaseLoad[r]/@IDispatchService.MaxDoPerRitase)</option> }
+      </select></div>
+  </div>
+  <hr />
+  <div id="lines">
+    @for (var i = 0; i < Model.Lines.Count; i++)
+    {
+      <div class="row g-2 mb-2 line">
+        <div class="col-md-6"><select name="Lines[@i].ItemId" class="form-select item">
+          <option value="0">-- item --</option>
+          @foreach (var it in Model.Items) { <option value="@it.Id" selected="@(Model.Lines[i].ItemId==it.Id)">@it.PartNumber - @it.ItemName</option> }
+        </select></div>
+        <div class="col-md-3"><input name="Lines[@i].Qty" type="number" min="1" class="form-control qty" value="@(Model.Lines[i].Qty==0?"":Model.Lines[i].Qty.ToString())" placeholder="Qty" /></div>
+        <div class="col-md-3 fifo small text-muted"></div>
+      </div>
+    }
+  </div>
+  <button type="button" id="addLine" class="btn btn-outline-secondary btn-sm mb-3">+ Tambah item</button>
+  <div class="small text-muted mb-3">Rekomendasi FIFO (lot tertua, tanpa LOW_VOLTAGE) tampil di sisi kanan tiap baris.</div>
+  <button class="btn btn-primary">Simpan Rencana</button> <a class="btn btn-link" asp-action="Index">Batal</a>
+</div></form>
+@section Scripts {
+<script>
+  var idx = $('#lines .line').length;
+  function fifo($row) {
+    var id = $row.find('.item').val(), q = $row.find('.qty').val();
+    if (!id || id == 0 || !q) { $row.find('.fifo').text(''); return; }
+    $.getJSON('/Dispatch/Fifo', { itemId: id, qty: q }, function (rows) {
+      var tot = rows.reduce(function (a, r) { return a + r.quantity; }, 0);
+      var html = rows.map(function (r) { return r.lotNumber + ' @@ ' + r.location + ' (' + r.quantity + ')'; }).join('<br>');
+      if (tot < q) html += '<br><span class="text-danger">Stok kurang ' + (q - tot) + '</span>';
+      $row.find('.fifo').html(html);
+    });
+  }
+  $('#lines').on('change input', '.item, .qty', function () { fifo($(this).closest('.line')); });
+  $('#addLine').on('click', function () {
+    var $c = $('#lines .line').first().clone();
+    $c.find('select').attr('name', 'Lines[' + idx + '].ItemId').val(0);
+    $c.find('input').attr('name', 'Lines[' + idx + '].Qty').val('');
+    $c.find('.fifo').text(''); idx++; $('#lines').append($c);
+  });
+</script>
+}
