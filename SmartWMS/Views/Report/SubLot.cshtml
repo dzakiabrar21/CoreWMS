@@ -1,0 +1,270 @@
+@model SubLotReportVm
+@{
+  ViewData["Title"] = "Laporan Stok Sub-Lot & Aging";
+}
+
+<!-- REPORT HEADER -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3 d-print-none">
+  <div>
+    <h3 class="fw-bold mb-1" style="letter-spacing: -0.03em;">Laporan Stok Sub-Lot &amp; Aging Baterai</h3>
+    <p class="text-muted mb-0 small">
+      <i class="bi bi-file-earmark-bar-graph me-1"></i> Inventory Stock Un-Lot Size Battery &amp; Chemical Quality Monitoring
+    </p>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="@Url.Action("ExportCsv", "Report", new { part = Model.SelectedPart, status = Model.SelectedStatus, location = Model.SelectedLocation, aging = Model.AgingFilter })" 
+       class="btn btn-outline-success d-flex align-items-center gap-2 btn-sm px-3">
+      <i class="bi bi-filetype-csv fs-6"></i> Ekspor CSV / Excel
+    </a>
+    <button onclick="window.print()" class="btn btn-outline-secondary d-flex align-items-center gap-2 btn-sm px-3">
+      <i class="bi bi-printer fs-6"></i> Cetak Laporan (Print)
+    </button>
+  </div>
+</div>
+
+<!-- PRINT ONLY HEADER -->
+<div class="d-none d-print-block mb-4 pb-2 border-bottom">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="fw-bold mb-0">PT CENTURY BATTERIES INDONESIA</h4>
+      <div class="fs-6 text-muted">LAPORAN MONITORING STOK SUB-LOT &amp; AGING BATERAI FINISHED GOODS</div>
+    </div>
+    <div class="text-end small">
+      <div>Tanggal Cetak: @DateTime.Now.ToString("dd MMMM yyyy HH:mm")</div>
+      <div>Status Sistem: LIVE REPOSITORY</div>
+    </div>
+  </div>
+</div>
+
+<!-- KPI SUMMARY MINI CARDS -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="metric-card primary p-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="metric-title" style="font-size: 0.72rem;">Total Unit Baterai</div>
+          <div class="metric-value fs-4">@Model.TotalQty.ToString("N0")</div>
+          <div class="text-muted" style="font-size: 0.75rem;">Fisik Tersimpan</div>
+        </div>
+        <div class="metric-icon-wrap primary" style="width: 40px; height: 40px; font-size: 1.1rem;">
+          <i class="bi bi-boxes"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="metric-card success p-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="metric-title" style="font-size: 0.72rem;">Total Lot Aktif</div>
+          <div class="metric-value fs-4">@Model.TotalLots</div>
+          <div class="text-muted" style="font-size: 0.75rem;">Batch Produksi</div>
+        </div>
+        <div class="metric-icon-wrap success" style="width: 40px; height: 40px; font-size: 1.1rem;">
+          <i class="bi bi-tags-fill"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="metric-card warning p-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="metric-title" style="font-size: 0.72rem;">Stok Aging Alert</div>
+          <div class="metric-value fs-4 text-warning">@Model.TotalAgingQty.ToString("N0")</div>
+          <div class="text-muted" style="font-size: 0.75rem;">Simpan &gt;90 Hari (Perlu Cas)</div>
+        </div>
+        <div class="metric-icon-wrap warning" style="width: 40px; height: 40px; font-size: 1.1rem;">
+          <i class="bi bi-battery-charging"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="metric-card danger p-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="metric-title" style="font-size: 0.72rem;">Stok Low Voltage</div>
+          <div class="metric-value fs-4 text-danger">@Model.TotalLowVoltageQty.ToString("N0")</div>
+          <div class="text-muted" style="font-size: 0.75rem;">Voltase Drop &lt;12.40V</div>
+        </div>
+        <div class="metric-icon-wrap" style="width: 40px; height: 40px; font-size: 1.1rem; background: #fee2e2; color: #ef4444;">
+          <i class="bi bi-lightning-charge-fill"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTER CARD (HIDDEN IN PRINT) -->
+<div class="modern-card mb-4 d-print-none">
+  <div class="card-header-clean py-2 px-3">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-funnel text-primary"></i>
+      <span class="fs-6">Filter &amp; Pencarian Laporan</span>
+    </div>
+  </div>
+  <div class="p-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small text-muted mb-1">Part Number (Aki)</label>
+        <select name="part" class="form-select form-select-sm">
+          <option value="">-- Semua Part Baterai --</option>
+          @foreach (var i in Model.Items)
+          {
+            <option value="@i.PartNumber" selected="@(Model.SelectedPart == i.PartNumber)">
+              @i.PartNumber &mdash; @i.ItemName
+            </option>
+          }
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label small text-muted mb-1">Lokasi Rak / Floor</label>
+        <select name="location" class="form-select form-select-sm">
+          <option value="">-- Semua Lokasi Gudang --</option>
+          @foreach (var l in Model.Locations)
+          {
+            <option value="@l.LocationCode" selected="@(Model.SelectedLocation == l.LocationCode)">
+              @l.LocationCode (@l.ZoneType)
+            </option>
+          }
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label small text-muted mb-1">Status Kualitas</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="">-- Semua Status --</option>
+          <option value="@StockStatus.Normal" selected="@(Model.SelectedStatus == StockStatus.Normal)">NORMAL</option>
+          <option value="@StockStatus.Aging" selected="@(Model.SelectedStatus == StockStatus.Aging)">AGING ALERT</option>
+          <option value="@StockStatus.LowVoltage" selected="@(Model.SelectedStatus == StockStatus.LowVoltage)">LOW VOLTAGE</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label small text-muted mb-1">Rentang Umur (Aging)</label>
+        <select name="aging" class="form-select form-select-sm">
+          <option value="">-- Semua Umur --</option>
+          <option value="FRESH" selected="@(Model.AgingFilter == "FRESH")">Fresh (&lt; 60 Hari)</option>
+          <option value="WARNING" selected="@(Model.AgingFilter == "WARNING")">Waspada (60 - 90 Hari)</option>
+          <option value="AGING" selected="@(Model.AgingFilter == "AGING")">Aging (&gt; 90 Hari)</option>
+        </select>
+      </div>
+
+      <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm w-100 d-flex align-items-center justify-content-center gap-1">
+          <i class="bi bi-search"></i> Filter
+        </button>
+        <a asp-action="SubLot" class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center" title="Reset Filter">
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- REPORT DATA TABLE -->
+<div class="modern-card">
+  <div class="card-header-clean py-2 px-3">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-table text-primary"></i>
+      <span class="fs-6">Daftar Stok Sub-Lot (Urut Berdasarkan Prioritas FIFO / Tgl Produksi Terlama)</span>
+    </div>
+    <span class="badge bg-light text-dark border">@Model.Rows.Count Lot Ditemukan</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-modern align-middle mb-0" id="reportTable">
+      <thead>
+        <tr>
+          <th style="width: 40px;">No</th>
+          <th>Part Number / Item</th>
+          <th>Nomor Lot</th>
+          <th>Lokasi Slot</th>
+          <th>Tgl Produksi</th>
+          <th>Aging (Hari)</th>
+          <th>Voltase (V)</th>
+          <th>Qty Stok</th>
+          <th>Status Kualitas</th>
+          <th>Waktu Masuk</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (!Model.Rows.Any())
+        {
+          <tr>
+            <td colspan="10" class="text-center py-5 text-muted">
+              <i class="bi bi-search fs-1 mb-2"></i>
+              <div class="fw-semibold">Tidak ada data stok sub-lot yang sesuai dengan kriteria filter.</div>
+              <small class="text-muted">Coba ubah opsi filter pencarian di atas.</small>
+            </td>
+          </tr>
+        }
+        @for (int i = 0; i < Model.Rows.Count; i++)
+        {
+          var r = Model.Rows[i];
+          var statusPill = r.Status == StockStatus.Normal ? "safe" : r.Status == StockStatus.Aging ? "warning" : "danger";
+          var statusIcon = r.Status == StockStatus.Normal ? "bi-check-circle-fill text-success" : r.Status == StockStatus.Aging ? "bi-exclamation-triangle-fill text-warning" : "bi-shield-x text-danger";
+          
+          var ageClass = r.AgingDays > r.MaxShelfLifeDays ? "badge bg-danger text-white" : r.AgingDays >= 60 ? "badge bg-warning text-dark" : "badge bg-light text-dark border";
+
+          <tr>
+            <td class="text-muted small">@(i + 1)</td>
+            <td>
+              <span class="fw-bold text-primary">@r.PartNumber</span>
+              <div class="text-muted small" style="font-size: 0.75rem;">@r.ItemName</div>
+            </td>
+            <td>
+              <code class="px-2 py-1 bg-light text-dark rounded border fw-bold">@r.LotNumber</code>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border me-1">
+                <i class="bi bi-geo-alt-fill text-primary"></i> @r.LocationCode
+              </span>
+              <span class="rack-zone-badge @(r.ZoneType == "RACK" ? "zone-rack" : "zone-floor")">@r.ZoneType</span>
+            </td>
+            <td>
+              <span class="small fw-semibold">@r.ProductionDate.ToString("dd/MM/yyyy")</span>
+            </td>
+            <td>
+              <span class="@ageClass" title="Batas simpan: @r.MaxShelfLifeDays hari">
+                @r.AgingDays hari
+              </span>
+            </td>
+            <td>
+              <span class="fw-semibold @(r.MeasuredVoltage < r.MinVoltageThreshold ? "text-danger" : "text-success")">
+                @r.MeasuredVoltage.ToString("F2") V
+              </span>
+              <div class="text-muted small" style="font-size: 0.7rem;">Std: @r.StandardVoltage.ToString("F2")V</div>
+            </td>
+            <td>
+              <span class="fw-bold fs-6">@r.Quantity</span> <small class="text-muted">unit</small>
+            </td>
+            <td>
+              <span class="status-pill @statusPill">
+                <i class="bi @statusIcon"></i> @r.Status
+              </span>
+            </td>
+            <td class="text-muted small" style="font-size: 0.8rem;">
+              @r.ReceivedAt.ToString("dd/MM/yy HH:mm")
+            </td>
+          </tr>
+        }
+      </tbody>
+      @if (Model.Rows.Any())
+      {
+        <tfoot>
+          <tr class="table-light fw-bold">
+            <td colspan="7" class="text-end">TOTAL AKUMULASI STOK:</td>
+            <td colspan="3">
+              <span class="fs-6 text-primary">@Model.TotalQty.ToString("N0")</span> unit
+            </td>
+          </tr>
+        </tfoot>
+      }
+    </table>
+  </div>
+</div>

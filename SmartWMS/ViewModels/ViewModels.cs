@@ -57,3 +57,40 @@ public class DashboardVm
     public List<LocationTile> Tiles { get; set; } = new();
 }
 public record LocationTile(string Code, string Zone, int Qty, int Max, string Color);
+
+public class SubLotReportVm
+{
+    public string? SelectedPart { get; set; }
+    public string? SelectedStatus { get; set; }
+    public string? SelectedLocation { get; set; }
+    public string? AgingFilter { get; set; }
+
+    public int TotalQty { get; set; }
+    public int TotalLots { get; set; }
+    public int TotalAgingQty { get; set; }
+    public int TotalLowVoltageQty { get; set; }
+
+    public List<Item> Items { get; set; } = new();
+    public List<StorageLocation> Locations { get; set; } = new();
+    public List<SubLotRowVm> Rows { get; set; } = new();
+}
+
+public class SubLotRowVm
+{
+    public int Id { get; set; }
+    public string PartNumber { get; set; } = "";
+    public string ItemName { get; set; } = "";
+    public string LotNumber { get; set; } = "";
+    public string LocationCode { get; set; } = "";
+    public string ZoneType { get; set; } = "";
+    public DateOnly ProductionDate { get; set; }
+    public int AgingDays { get; set; }
+    public int MaxShelfLifeDays { get; set; }
+    public decimal MeasuredVoltage { get; set; }
+    public decimal StandardVoltage { get; set; }
+    public decimal MinVoltageThreshold { get; set; }
+    public int Quantity { get; set; }
+    public string Status { get; set; } = "";
+    public DateTime ReceivedAt { get; set; }
+}
+

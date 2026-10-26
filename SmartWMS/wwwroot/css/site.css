@@ -450,3 +450,30 @@ body {
 .table-modern tbody tr:hover td {
   background-color: #f8fafc;
 }
+
+/* PRINT STYLES */
+@media print {
+  .navbar-custom, .d-print-none, .btn, .system-status-pill {
+    display: none !important;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 10pt;
+  }
+  .modern-card, .metric-card {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    border-radius: 4px !important;
+  }
+  .table-modern thead th {
+    background: #f1f5f9 !important;
+    color: #000000 !important;
+    border-bottom: 2px solid #333333 !important;
+  }
+  .table-modern td, .table-modern th {
+    padding: 5px 8px !important;
+    font-size: 9pt !important;
+  }
+}
+

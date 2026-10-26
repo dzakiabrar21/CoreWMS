@@ -34,6 +34,9 @@
         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dispatch" ? "active" : "")" asp-controller="Dispatch" asp-action="Index">
           <i class="bi bi-truck"></i> Heijunka Dispatch
         </a>
+        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" ? "active" : "")" asp-controller="Report" asp-action="SubLot">
+          <i class="bi bi-file-earmark-bar-graph"></i> Laporan Sub-Lot
+        </a>
       </div>
       <div class="ms-auto d-flex align-items-center gap-3 mt-3 mt-lg-0">
         <div class="system-status-pill">
