@@ -48,6 +48,20 @@ public class InventoryService : IInventoryService
                 ProductionDate = vm.ProductionDate, MeasuredVoltage = vm.MeasuredVoltage,
                 Quantity = vm.Qty, Status = status, ReceivedAt = DateTime.Now
             });
+
+            _db.StockMovements.Add(new StockMovement
+            {
+                MovementType = MovementType.Inbound,
+                ItemId = item.Id,
+                ToLocationId = loc.Id,
+                LotNumber = vm.LotNumber.Trim().ToUpper(),
+                Quantity = vm.Qty,
+                ReferenceNumber = $"INB-{DateTime.Today:yyyyMMdd}-{vm.LotNumber.Trim().ToUpper()}",
+                Notes = $"Penerimaan Storing Inbound ({status})",
+                OperatorName = "OPERATOR_INBOUND",
+                CreatedAt = DateTime.Now
+            });
+
             loc.CurrentQty += vm.Qty;
             await _db.SaveChangesAsync();
             await tx.CommitAsync();
@@ -89,6 +103,19 @@ public class InventoryService : IInventoryService
             b.Quantity -= take;
             b.Location.CurrentQty -= take;
             remaining -= take;
+
+            _db.StockMovements.Add(new StockMovement
+            {
+                MovementType = MovementType.Outbound,
+                ItemId = itemId,
+                FromLocationId = b.LocationId,
+                LotNumber = b.LotNumber,
+                Quantity = take,
+                ReferenceNumber = "OUTBOUND-FIFO",
+                Notes = $"Pengurangan Stok FIFO (Sisa Lot: {b.Quantity})",
+                OperatorName = "DISPATCH_SYSTEM",
+                CreatedAt = DateTime.Now
+            });
         }
         if (remaining > 0)
             throw new InvalidOperationException($"Stok tidak cukup untuk item #{itemId}, kurang {remaining} unit.");

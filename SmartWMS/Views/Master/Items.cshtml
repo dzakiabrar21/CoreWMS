@@ -1,0 +1,158 @@
+@model MasterItemsVm
+@{
+  ViewData["Title"] = "Master Produk & SKU";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+  <div>
+    <h3 class="fw-bold mb-1" style="letter-spacing: -0.03em;">Master Katalog Produk (Universal SKU)</h3>
+    <p class="text-muted mb-0 small"><i class="bi bi-boxes me-1"></i> Manajemen Part Number, Kategori Industri, Satuan UOM, &amp; Parameter Kualitas</p>
+  </div>
+  <button type="button" class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addItemModal">
+    <i class="bi bi-plus-lg"></i> Tambah Produk Baru
+  </button>
+</div>
+
+@if (TempData["Error"] is string err)
+{
+  <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius: 12px;">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i> @err
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+}
+
+<div class="modern-card">
+  <div class="card-header-clean py-2 px-3">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-tags-fill text-primary"></i>
+      <span class="fs-6">Daftar SKU / Master Item Terdaftar</span>
+    </div>
+    <span class="badge bg-light text-dark border">@Model.Items.Count SKU</span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-modern align-middle mb-0">
+      <thead>
+        <tr>
+          <th>SKU / Part Number</th>
+          <th>Nama Produk</th>
+          <th>Kategori Industri</th>
+          <th>Satuan (UOM)</th>
+          <th>Ambang Stok (Min - Max)</th>
+          <th>Masa Simpan Max</th>
+          <th>Stok Fisik Aktif</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (!Model.Items.Any())
+        {
+          <tr>
+            <td colspan="7" class="text-center py-4 text-muted">Belum ada master item. Klik tombol Tambah Produk Baru di atas.</td>
+          </tr>
+        }
+        @foreach (var i in Model.Items)
+        {
+          var currentStock = i.Balances.Sum(b => b.Quantity);
+          var isLowStock = currentStock < i.MinStockLevel;
+
+          <tr>
+            <td>
+              <code class="px-2 py-1 bg-light text-primary rounded border fw-bold">@i.PartNumber</code>
+            </td>
+            <td>
+              <span class="fw-semibold">@i.ItemName</span>
+            </td>
+            <td>
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                @(i.Category?.Name ?? "General Goods")
+              </span>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border fw-bold">@i.UOM</span>
+            </td>
+            <td>
+              <span class="small text-muted">Min: @i.MinStockLevel &middot; Max: @i.MaxStockLevel</span>
+            </td>
+            <td>
+              <span class="small text-muted">@i.MaxShelfLifeDays hari</span>
+            </td>
+            <td>
+              <span class="fw-bold fs-6 @(isLowStock ? "text-danger" : "text-success")">
+                @currentStock.ToString("N0")
+              </span>
+              <small class="text-muted">@i.UOM</small>
+              @if (isLowStock)
+              {
+                <span class="badge bg-danger ms-1" title="Stok di bawah batas minimum">Low</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL TAMBAH PRODUK -->
+<div class="modal fade" id="addItemModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow" style="border-radius: 16px;">
+      <div class="modal-header border-bottom-0 pb-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-box-seam text-primary me-2"></i> Tambah Master Produk</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form asp-action="CreateItem" method="post">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">SKU / Part Number <span class="text-danger">*</span></label>
+            <input name="PartNumber" class="form-control text-uppercase" placeholder="misal: SKU-ELEC-001 / NS40-MF" required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Nama Produk Lengkap <span class="text-danger">*</span></label>
+            <input name="ItemName" class="form-control" placeholder="misal: Brake Pad Front Set / Aki NS40" required />
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-7">
+              <label class="form-label">Kategori Industri</label>
+              <select name="CategoryId" class="form-select">
+                <option value="">-- Tanpa Kategori --</option>
+                @foreach (var c in Model.Categories)
+                {
+                  <option value="@c.Id">@c.Name (@c.PickingStrategy)</option>
+                }
+              </select>
+            </div>
+            <div class="col-5">
+              <label class="form-label">Satuan (UOM)</label>
+              <select name="UOM" class="form-select">
+                <option value="PCS">PCS</option>
+                <option value="BOX">BOX</option>
+                <option value="SET">SET</option>
+                <option value="PALLET">PALLET</option>
+                <option value="CTN">CTN (Karton)</option>
+                <option value="KG">KG</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label">Min Stock Level</label>
+              <input name="MinStockLevel" type="number" class="form-control" value="10" />
+            </div>
+            <div class="col-6">
+              <label class="form-label">Masa Simpan Max (Hari)</label>
+              <input name="MaxShelfLifeDays" type="number" class="form-control" value="90" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary px-4">Simpan Produk</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,168 @@
+@model MasterLocationsVm
+@{
+  ViewData["Title"] = "Master Lokasi Gudang";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+  <div>
+    <h3 class="fw-bold mb-1" style="letter-spacing: -0.03em;">Master Lokasi Rak &amp; Gudang</h3>
+    <p class="text-muted mb-0 small"><i class="bi bi-geo-alt me-1"></i> Manajemen Slot Alamat Rak, Lantai, Cold Storage, &amp; Kapasitas Fisik</p>
+  </div>
+  <button type="button" class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addLocModal">
+    <i class="bi bi-plus-lg"></i> Tambah Slot Lokasi
+  </button>
+</div>
+
+@if (TempData["Error"] is string err)
+{
+  <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius: 12px;">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i> @err
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+}
+
+<div class="modern-card">
+  <div class="card-header-clean py-2 px-3">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-grid-3x3-gap-fill text-primary"></i>
+      <span class="fs-6">Daftar Slot Lokasi Terdaftar</span>
+    </div>
+    <span class="badge bg-light text-dark border">@Model.Locations.Count Slot</span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-modern align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Kode Alamat Lokasi</th>
+          <th>Gudang / Fasilitas</th>
+          <th>Tipe Zona</th>
+          <th>Lorong / Rak</th>
+          <th>Kapasitas Maksimal</th>
+          <th>Terisi Saat Ini</th>
+          <th>Tingkat Okupansi</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (!Model.Locations.Any())
+        {
+          <tr>
+            <td colspan="8" class="text-center py-4 text-muted">Belum ada lokasi penyimpanan. Klik tombol Tambah Slot Lokasi di atas.</td>
+          </tr>
+        }
+        @foreach (var l in Model.Locations)
+        {
+          var pct = l.MaxCapacity > 0 ? (l.CurrentQty * 100 / l.MaxCapacity) : 0;
+          var barColor = pct >= 90 ? "bg-danger" : pct >= 80 ? "bg-warning" : "bg-success";
+
+          <tr>
+            <td>
+              <code class="px-2 py-1 bg-light text-dark rounded border fw-bold fs-6">
+                <i class="bi bi-geo-alt-fill text-primary me-1"></i>@l.LocationCode
+              </code>
+            </td>
+            <td>
+              <span class="fw-semibold">@(l.Warehouse?.Name ?? "Main Warehouse")</span>
+            </td>
+            <td>
+              <span class="rack-zone-badge @(l.ZoneType == "RACK" ? "zone-rack" : "zone-floor")">
+                @l.ZoneType
+              </span>
+            </td>
+            <td>
+              <span class="small text-muted">@(string.IsNullOrEmpty(l.Aisle) ? "-" : $"Aisle {l.Aisle} &middot; Rak {l.Rack}")</span>
+            </td>
+            <td>
+              <span class="fw-semibold">@l.MaxCapacity.ToString("N0")</span> <small class="text-muted">unit</small>
+            </td>
+            <td>
+              <span class="fw-bold">@l.CurrentQty.ToString("N0")</span> <small class="text-muted">unit</small>
+            </td>
+            <td style="min-width: 140px;">
+              <div class="d-flex justify-content-between small fw-bold mb-1">
+                <span>@pct%</span>
+                <span class="text-muted fw-normal">sisa @(l.MaxCapacity - l.CurrentQty)</span>
+              </div>
+              <div class="progress" style="height: 6px; border-radius: 9999px;">
+                <div class="progress-bar @barColor" style="width: @pct%;"></div>
+              </div>
+            </td>
+            <td>
+              @if (l.IsActive)
+              {
+                <span class="badge bg-success-subtle text-success border border-success-subtle">Aktif</span>
+              }
+              else
+              {
+                <span class="badge bg-secondary-subtle text-secondary border">Non-Aktif</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL TAMBAH LOKASI -->
+<div class="modal fade" id="addLocModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow" style="border-radius: 16px;">
+      <div class="modal-header border-bottom-0 pb-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-geo-alt text-primary me-2"></i> Tambah Slot Lokasi Baru</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form asp-action="CreateLocation" method="post">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Gudang / Fasilitas</label>
+            <select name="WarehouseId" class="form-select">
+              @foreach (var w in Model.Warehouses)
+              {
+                <option value="@w.Id">@w.Code &mdash; @w.Name</option>
+              }
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Kode Unik Lokasi <span class="text-danger">*</span></label>
+            <input name="LocationCode" class="form-control text-uppercase" placeholder="misal: RACK-C1-01 / COLD-01 / FLOOR-03" required />
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label">Tipe Zona</label>
+              <select name="ZoneType" class="form-select">
+                <option value="RACK">RACK (Rak Bertingkat)</option>
+                <option value="FLOOR">FLOOR (Area Lantai)</option>
+                <option value="COLD_STORAGE">COLD STORAGE</option>
+                <option value="BULK">BULK STORAGE</option>
+                <option value="STAGING">STAGING AREA</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Kapasitas Maksimal (Unit)</label>
+              <input name="MaxCapacity" type="number" min="1" class="form-control" value="100" required />
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label">Lorong (Aisle)</label>
+              <input name="Aisle" class="form-control" placeholder="A1 / B2" />
+            </div>
+            <div class="col-6">
+              <label class="form-label">Rak / Tier</label>
+              <input name="Rack" class="form-control" placeholder="01 / 02" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary px-4">Daftarkan Lokasi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

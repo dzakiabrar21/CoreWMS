@@ -106,6 +106,9 @@ namespace SmartWMS.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -115,6 +118,12 @@ namespace SmartWMS.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("MaxShelfLifeDays")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxStockLevel")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinStockLevel")
                         .HasColumnType("int");
 
                     b.Property<decimal>("MinVoltageThreshold")
@@ -130,12 +139,117 @@ namespace SmartWMS.Migrations
                         .HasPrecision(4, 2)
                         .HasColumnType("decimal(4,2)");
 
+                    b.Property<string>("UOM")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
 
                     b.HasIndex("PartNumber")
                         .IsUnique();
 
                     b.ToTable("Items");
+                });
+
+            modelBuilder.Entity("SmartWMS.Models.ItemCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PickingStrategy")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("RequiresExpiryCheck")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("RequiresVoltageCheck")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("ItemCategories");
+                });
+
+            modelBuilder.Entity("SmartWMS.Models.StockMovement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("FromLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LotNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("MovementType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("OperatorName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReferenceNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("ToLocationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromLocationId");
+
+                    b.HasIndex("ReferenceNumber");
+
+                    b.HasIndex("ToLocationId");
+
+                    b.HasIndex("ItemId", "CreatedAt");
+
+                    b.ToTable("StockMovements");
                 });
 
             modelBuilder.Entity("SmartWMS.Models.StorageLocation", b =>
@@ -146,6 +260,11 @@ namespace SmartWMS.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Aisle")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
                     b.Property<int>("CurrentQty")
                         .HasColumnType("int");
 
@@ -154,26 +273,36 @@ namespace SmartWMS.Migrations
 
                     b.Property<string>("LocationCode")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<int>("MaxCapacity")
                         .HasColumnType("int");
+
+                    b.Property<string>("Rack")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
+                    b.Property<int?>("WarehouseId")
+                        .HasColumnType("int");
+
                     b.Property<string>("ZoneType")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("LocationCode")
                         .IsUnique();
+
+                    b.HasIndex("WarehouseId");
 
                     b.ToTable("StorageLocations");
                 });
@@ -185,6 +314,9 @@ namespace SmartWMS.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly?>("ExpiryDate")
+                        .HasColumnType("date");
 
                     b.Property<int>("ItemId")
                         .HasColumnType("int");
@@ -229,6 +361,40 @@ namespace SmartWMS.Migrations
                     b.ToTable("StoringBalances");
                 });
 
+            modelBuilder.Entity("SmartWMS.Models.Warehouse", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Warehouses");
+                });
+
             modelBuilder.Entity("SmartWMS.Models.DeliveryDetail", b =>
                 {
                     b.HasOne("SmartWMS.Models.Delivery", "Delivery")
@@ -248,10 +414,51 @@ namespace SmartWMS.Migrations
                     b.Navigation("Item");
                 });
 
+            modelBuilder.Entity("SmartWMS.Models.Item", b =>
+                {
+                    b.HasOne("SmartWMS.Models.ItemCategory", "Category")
+                        .WithMany("Items")
+                        .HasForeignKey("CategoryId");
+
+                    b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("SmartWMS.Models.StockMovement", b =>
+                {
+                    b.HasOne("SmartWMS.Models.StorageLocation", "FromLocation")
+                        .WithMany()
+                        .HasForeignKey("FromLocationId");
+
+                    b.HasOne("SmartWMS.Models.Item", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartWMS.Models.StorageLocation", "ToLocation")
+                        .WithMany()
+                        .HasForeignKey("ToLocationId");
+
+                    b.Navigation("FromLocation");
+
+                    b.Navigation("Item");
+
+                    b.Navigation("ToLocation");
+                });
+
+            modelBuilder.Entity("SmartWMS.Models.StorageLocation", b =>
+                {
+                    b.HasOne("SmartWMS.Models.Warehouse", "Warehouse")
+                        .WithMany("Locations")
+                        .HasForeignKey("WarehouseId");
+
+                    b.Navigation("Warehouse");
+                });
+
             modelBuilder.Entity("SmartWMS.Models.StoringBalance", b =>
                 {
                     b.HasOne("SmartWMS.Models.Item", "Item")
-                        .WithMany()
+                        .WithMany("Balances")
                         .HasForeignKey("ItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -272,9 +479,24 @@ namespace SmartWMS.Migrations
                     b.Navigation("Details");
                 });
 
+            modelBuilder.Entity("SmartWMS.Models.Item", b =>
+                {
+                    b.Navigation("Balances");
+                });
+
+            modelBuilder.Entity("SmartWMS.Models.ItemCategory", b =>
+                {
+                    b.Navigation("Items");
+                });
+
             modelBuilder.Entity("SmartWMS.Models.StorageLocation", b =>
                 {
                     b.Navigation("Balances");
+                });
+
+            modelBuilder.Entity("SmartWMS.Models.Warehouse", b =>
+                {
+                    b.Navigation("Locations");
                 });
 #pragma warning restore 612, 618
         }

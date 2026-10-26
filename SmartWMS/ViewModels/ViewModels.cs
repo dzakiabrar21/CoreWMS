@@ -94,3 +94,24 @@ public class SubLotRowVm
     public DateTime ReceivedAt { get; set; }
 }
 
+public class MasterItemsVm
+{
+    public List<Item> Items { get; set; } = new();
+    public List<ItemCategory> Categories { get; set; } = new();
+}
+
+public class MasterLocationsVm
+{
+    public List<StorageLocation> Locations { get; set; } = new();
+    public List<Warehouse> Warehouses { get; set; } = new();
+}
+
+public class AuditTrailVm
+{
+    public string? SelectedType { get; set; }
+    public string? SelectedPart { get; set; }
+    public List<StockMovement> Movements { get; set; } = new();
+    public List<Item> Items { get; set; } = new();
+}
+
+

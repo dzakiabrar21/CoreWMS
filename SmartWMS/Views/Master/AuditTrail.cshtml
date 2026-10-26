@@ -1,0 +1,154 @@
+@model AuditTrailVm
+@{
+  ViewData["Title"] = "Buku Besar Mutasi (Audit Trail)";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+  <div>
+    <h3 class="fw-bold mb-1" style="letter-spacing: -0.03em;">Buku Besar Mutasi Stok (Stock Movement Ledger)</h3>
+    <p class="text-muted mb-0 small"><i class="bi bi-journal-text me-1"></i> Log Audit Permanen Setiap Pergerakan Stok Fisik Gudang (Traceability &amp; Compliance)</p>
+  </div>
+  <a asp-action="AuditTrail" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+    <i class="bi bi-arrow-clockwise"></i> Refresh Log
+  </a>
+</div>
+
+<!-- FILTER -->
+<div class="modern-card mb-4">
+  <div class="p-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label small text-muted mb-1">Tipe Mutasi</label>
+        <select name="type" class="form-select form-select-sm">
+          <option value="">-- Semua Tipe Pergerakan --</option>
+          <option value="@MovementType.Inbound" selected="@(Model.SelectedType == MovementType.Inbound)">INBOUND (Penerimaan)</option>
+          <option value="@MovementType.Outbound" selected="@(Model.SelectedType == MovementType.Outbound)">OUTBOUND (Pengiriman / DO)</option>
+          <option value="@MovementType.Transfer" selected="@(Model.SelectedType == MovementType.Transfer)">TRANSFER (Antar Rak)</option>
+          <option value="@MovementType.Adjustment" selected="@(Model.SelectedType == MovementType.Adjustment)">ADJUSTMENT (Stock Opname)</option>
+        </select>
+      </div>
+
+      <div class="col-md-5">
+        <label class="form-label small text-muted mb-1">Part Number (SKU)</label>
+        <select name="part" class="form-select form-select-sm">
+          <option value="">-- Semua Part Baterai / Barang --</option>
+          @foreach (var i in Model.Items)
+          {
+            <option value="@i.PartNumber" selected="@(Model.SelectedPart == i.PartNumber)">
+              @i.PartNumber &mdash; @i.ItemName
+            </option>
+          }
+        </select>
+      </div>
+
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm w-100 d-flex align-items-center justify-content-center gap-1">
+          <i class="bi bi-search"></i> Filter Ledger
+        </button>
+        <a asp-action="AuditTrail" class="btn btn-outline-secondary btn-sm" title="Reset">
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- DATA TABLE -->
+<div class="modern-card">
+  <div class="card-header-clean py-2 px-3">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-shield-check text-primary"></i>
+      <span class="fs-6">Jurnal Mutasi Stok Terakhir</span>
+    </div>
+    <span class="badge bg-light text-dark border">100 Transaksi Terbaru</span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-modern align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Waktu Transaksi</th>
+          <th>Tipe Mutasi</th>
+          <th>Part / Item</th>
+          <th>Nomor Lot</th>
+          <th>Perpindahan Lokasi</th>
+          <th>Qty</th>
+          <th>No. Referensi</th>
+          <th>Keterangan</th>
+          <th>Operator</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (!Model.Movements.Any())
+        {
+          <tr>
+            <td colspan="9" class="text-center py-5 text-muted">
+              <i class="bi bi-journal-x fs-1 mb-2"></i>
+              <div>Belum ada transaksi mutasi tercatat dalam filter ini.</div>
+            </td>
+          </tr>
+        }
+        @foreach (var m in Model.Movements)
+        {
+          var typeBadge = m.MovementType switch {
+            MovementType.Inbound => "bg-success-subtle text-success border border-success-subtle",
+            MovementType.Outbound => "bg-primary-subtle text-primary border border-primary-subtle",
+            MovementType.Transfer => "bg-warning-subtle text-warning border border-warning-subtle",
+            _ => "bg-secondary-subtle text-secondary border"
+          };
+
+          <tr>
+            <td class="text-muted small">
+              <i class="bi bi-clock me-1"></i>@m.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")
+            </td>
+            <td>
+              <span class="badge @typeBadge fw-bold">@m.MovementType</span>
+            </td>
+            <td>
+              <span class="fw-bold">@m.Item.PartNumber</span>
+              <div class="text-muted small" style="font-size: 0.72rem;">@m.Item.ItemName</div>
+            </td>
+            <td>
+              <code class="px-2 py-1 bg-light text-dark rounded border fw-bold">@m.LotNumber</code>
+            </td>
+            <td>
+              @if (m.FromLocation != null && m.ToLocation != null)
+              {
+                <span><i class="bi bi-geo-alt"></i> @m.FromLocation.LocationCode &rarr; <i class="bi bi-geo-alt-fill text-primary"></i> @m.ToLocation.LocationCode</span>
+              }
+              else if (m.ToLocation != null)
+              {
+                <span class="text-success"><i class="bi bi-arrow-down-right"></i> Ke: @m.ToLocation.LocationCode</span>
+              }
+              else if (m.FromLocation != null)
+              {
+                <span class="text-primary"><i class="bi bi-arrow-up-right"></i> Dari: @m.FromLocation.LocationCode</span>
+              }
+              else
+              {
+                <span class="text-muted">-</span>
+              }
+            </td>
+            <td>
+              <span class="fw-bold fs-6 @(m.MovementType == MovementType.Inbound ? "text-success" : "text-primary")">
+                @(m.MovementType == MovementType.Inbound ? "+" : "-")@m.Quantity
+              </span>
+              <small class="text-muted">unit</small>
+            </td>
+            <td>
+              <span class="small fw-semibold">@(string.IsNullOrEmpty(m.ReferenceNumber) ? "-" : m.ReferenceNumber)</span>
+            </td>
+            <td>
+              <span class="small text-muted">@m.Notes</span>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border">
+                <i class="bi bi-person me-1"></i>@m.OperatorName
+              </span>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
