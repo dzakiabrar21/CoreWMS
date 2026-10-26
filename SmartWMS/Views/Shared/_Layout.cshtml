@@ -3,90 +3,334 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>@ViewData["Title"] - CoreWMS Portal</title>
+  <title>@ViewData["Title"] - RACKWISE WAREHOUSE OS</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <link rel="stylesheet" href="~/css/site.css" />
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-custom sticky-top">
-  <div class="container-fluid px-lg-4">
-    <a class="navbar-brand" asp-controller="Home" asp-action="Index">
-      <div class="brand-icon">
-        <i class="bi bi-boxes"></i>
-      </div>
-      <div>
-        <div class="lh-1">CoreWMS</div>
-        <div style="font-size: 0.65rem; font-weight: 500; color: #94a3b8; letter-spacing: 0.05em; text-transform: uppercase;">Finished Goods &amp; Dispatch</div>
-      </div>
-    </a>
-    <button class="navbar-toggler border-secondary text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
-      <i class="bi bi-list fs-3"></i>
-    </button>
-    <div class="collapse navbar-collapse" id="navContent">
-      <div class="navbar-nav ms-lg-4 gap-1">
-        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Home" asp-action="Index">
-          <i class="bi bi-house-door-fill"></i> Portal
-        </a>
-        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")" asp-controller="Home" asp-action="Dashboard">
-          <i class="bi bi-grid-1x2-fill"></i> Dashboard Gudang
-        </a>
-        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Storing" ? "active" : "")" asp-controller="Storing" asp-action="Create">
-          <i class="bi bi-box-arrow-in-down"></i> Checksheet Storing
-        </a>
-        <div class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle @(ViewContext.RouteData.Values["controller"]?.ToString() == "Internal" ? "active" : "")" href="#" role="button" data-bs-toggle="dropdown">
-            <i class="bi bi-arrow-left-right"></i> Operasional Internal
-          </a>
-          <ul class="dropdown-menu shadow border-0" style="border-radius: 12px; margin-top: 8px;">
-            <li><a class="dropdown-item py-2" asp-controller="Internal" asp-action="Transfer"><i class="bi bi-box-arrow-right me-2 text-primary"></i> Relokasi Antar Rak (Bin-to-Bin)</a></li>
-            <li><a class="dropdown-item py-2" asp-controller="Internal" asp-action="StockOpname"><i class="bi bi-clipboard-check me-2 text-success"></i> Stock Opname (Cycle Counting)</a></li>
-          </ul>
+
+<div class="app-shell">
+  <!-- FIXED SIDEBAR -->
+  <aside class="sidebar">
+    <div>
+      <!-- BRAND SECTION -->
+      <a asp-controller="Home" asp-action="Dashboard" class="brand-section text-decoration-none">
+        <div class="brand-icon-box">
+          <i class="bi bi-boxes"></i>
         </div>
-        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dispatch" ? "active" : "")" asp-controller="Dispatch" asp-action="Index">
-          <i class="bi bi-truck"></i> Heijunka Dispatch
+        <div>
+          <div class="brand-title">RACKWISE</div>
+          <div class="brand-sub">WAREHOUSE OS</div>
+        </div>
+      </a>
+
+      <!-- ACTIVE WAREHOUSE SWITCHER -->
+      <div class="warehouse-selector">
+        <div class="wh-badge">WH</div>
+        <div class="flex-grow-1 min-w-0">
+          <div class="wh-label">ACTIVE WAREHOUSE</div>
+          <div class="wh-name text-truncate">Central Jakarta</div>
+        </div>
+        <i class="bi bi-chevron-down text-muted" style="font-size: 11px;"></i>
+      </div>
+
+      <!-- WORKSPACE NAV -->
+      <div class="nav-group-title">WORKSPACE</div>
+      <a class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && (ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" || ViewContext.RouteData.Values["action"]?.ToString() == "Index") ? "active" : "")" 
+         asp-controller="Home" asp-action="Dashboard">
+        <i class="bi bi-grid-fill"></i>
+        <span>Dashboard</span>
+      </a>
+
+      <a class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Storing" ? "active" : "")" 
+         asp-controller="Storing" asp-action="Create">
+        <i class="bi bi-box-arrow-in-down"></i>
+        <span>Inbound Receiving</span>
+      </a>
+
+      <a class="nav-item-link @(ViewContext.RouteData.Values["action"]?.ToString() == "RackInventory" ? "active" : "")" 
+         asp-controller="Home" asp-action="RackInventory">
+        <i class="bi bi-layers-fill"></i>
+        <span>Rack &amp; Bin Inventory</span>
+      </a>
+
+      <!-- OPERATIONS NAV -->
+      <div class="nav-group-title">OPERATIONS</div>
+      <a class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Internal" ? "active" : "")" 
+         asp-controller="Internal" asp-action="Transfer">
+        <i class="bi bi-arrow-left-right"></i>
+        <span>Internal Operations</span>
+      </a>
+
+      <a class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dispatch" ? "active" : "")" 
+         asp-controller="Dispatch" asp-action="Index">
+        <i class="bi bi-truck"></i>
+        <span>Shipments &amp; Dispatch</span>
+        <span class="nav-badge">8</span>
+      </a>
+
+      <a class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" ? "active" : "")" 
+         asp-controller="Report" asp-action="SubLot">
+        <i class="bi bi-bar-chart-line-fill"></i>
+        <span>Stock Reports</span>
+      </a>
+
+      <!-- MANAGE NAV -->
+      <div class="nav-group-title">MANAGE</div>
+      <a class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Master" ? "active" : "")" 
+         asp-controller="Master" asp-action="Items">
+        <i class="bi bi-gear-fill"></i>
+        <span>Settings &amp; Master</span>
+      </a>
+    </div>
+
+    <!-- SIDEBAR FOOTER -->
+    <div class="sidebar-footer">
+      <a href="#" class="support-box">
+        <div class="support-icon">?</div>
+        <div>
+          <div style="color: #172033; font-size: 11px; font-weight: 700; line-height: 16.5px;">Need assistance?</div>
+          <div style="color: #8792A7; font-size: 9px; font-weight: 400; line-height: 13.5px;">Visit support center</div>
+        </div>
+      </a>
+      <div class="system-status-indicator">
+        <span class="live-pulse-dot"></span>
+        <span>All systems operational</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN WRAPPER -->
+  <div class="main-wrapper">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <!-- SEARCH BOX -->
+      <div class="search-box">
+        <i class="bi bi-search" style="color: #8C98A9; font-size: 12px;"></i>
+        <input type="text" id="globalSearchInput" placeholder="Search inventory, shipments..." />
+        <span class="search-kbd">⌘ K</span>
+      </div>
+
+      <!-- RIGHT ACTIONS -->
+      <div class="topbar-right">
+        <!-- SHIFT & TIME -->
+        <div class="shift-pill">
+          <i class="bi bi-clock" style="color: #586579; font-size: 14px;"></i>
+          <div>
+            <div class="shift-sub">SHIFT 01</div>
+            <div class="shift-time" id="topbarClock">06:42:18</div>
+          </div>
+        </div>
+
+        <!-- NOTIFICATION BELL -->
+        <button type="button" class="btn p-1 text-muted border-0 position-relative" title="Notifications">
+          <i class="bi bi-bell fs-5" style="color: #6F7C90;"></i>
+        </button>
+
+        <!-- SCAN BARCODE BUTTON (Triggers Poka-Yoke modal) -->
+        <button type="button" class="btn-topbar-outline" onclick="openPokaScanModal()">
+          <i class="bi bi-upc-scan"></i>
+          <span>Scan Barcode</span>
+        </button>
+
+        <!-- NEW INBOUND BUTTON -->
+        <a asp-controller="Storing" asp-action="Create" class="btn-topbar-primary">
+          <i class="bi bi-plus-lg"></i>
+          <span>New Inbound</span>
         </a>
-        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" ? "active" : "")" asp-controller="Report" asp-action="SubLot">
-          <i class="bi bi-file-earmark-bar-graph"></i> Laporan Stok
-        </a>
-        <div class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle @(ViewContext.RouteData.Values["controller"]?.ToString() == "Master" ? "active" : "")" href="#" role="button" data-bs-toggle="dropdown">
-            <i class="bi bi-gear-wide-connected"></i> Master &amp; Label
-          </a>
-          <ul class="dropdown-menu shadow border-0" style="border-radius: 12px; margin-top: 8px;">
-            <li><a class="dropdown-item py-2" asp-controller="Master" asp-action="Items"><i class="bi bi-boxes me-2 text-primary"></i> Master Produk (SKU)</a></li>
-            <li><a class="dropdown-item py-2" asp-controller="Master" asp-action="Locations"><i class="bi bi-geo-alt me-2 text-success"></i> Master Lokasi &amp; Rak</a></li>
-            <li><a class="dropdown-item py-2" asp-controller="Master" asp-action="PrintLabels"><i class="bi bi-upc-scan me-2 text-info"></i> Cetak Label QR / Barcode</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item py-2" asp-controller="Master" asp-action="AuditTrail"><i class="bi bi-journal-text me-2 text-warning"></i> Buku Besar Mutasi (Audit Trail)</a></li>
-          </ul>
+
+        <!-- USER PROFILE -->
+        <div class="user-profile-badge">
+          <div class="user-avatar">AR</div>
+          <div>
+            <div style="color: #2A3649; font-size: 10px; font-weight: 700; line-height: 15px;">Adrian R.</div>
+            <div style="color: #8A96A8; font-size: 8px; font-weight: 400; line-height: 12px; letter-spacing: 0.64px;">Ops Manager</div>
+          </div>
+          <i class="bi bi-chevron-down text-muted" style="font-size: 10px;"></i>
         </div>
       </div>
-      <div class="ms-auto d-flex align-items-center gap-3 mt-3 mt-lg-0">
-        <div class="system-status-pill">
-          <span class="status-dot-pulse"></span>
-          <span>WH SYSTEM LIVE</span>
+    </header>
+
+    <!-- MAIN PAGE CONTAINER -->
+    <main class="page-container">
+      @if (TempData["Success"] is string ok)
+      {
+        <div class="alert alert-success alert-dismissible fade show border-0 d-flex align-items-center gap-2 mb-4" role="alert" style="border-radius: 12px; background: #ecfdf5; color: #065f46;">
+          <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+          <div><strong>Sukses!</strong> @ok</div>
+          <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      }
+      @if (TempData["Error"] is string err)
+      {
+        <div class="alert alert-danger alert-dismissible fade show border-0 d-flex align-items-center gap-2 mb-4" role="alert" style="border-radius: 12px; background: #fef2f2; color: #991b1b;">
+          <i class="bi bi-exclamation-octagon-fill fs-5 text-danger"></i>
+          <div><strong>Perhatian:</strong> @err</div>
+          <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      }
+
+      @RenderBody()
+    </main>
+  </div>
+</div>
+
+<!-- GLOBAL POKA-YOKE SCAN VERIFIER MODAL (FIGMA IMAGE 3) -->
+<div id="pokaScanModal" class="poka-modal-backdrop" style="display: none;">
+  <div class="poka-modal-card">
+    <!-- MODAL HEADER -->
+    <div class="poka-modal-header">
+      <div class="d-flex align-items-center gap-2">
+        <div style="width: 32px; height: 32px; background: #EDF3FF; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #2563EB;">
+          <i class="bi bi-upc-scan fs-5"></i>
+        </div>
+        <div>
+          <span style="font-size: 8px; font-weight: 700; letter-spacing: 0.08em; color: #2563EB; text-transform: uppercase;">POKA-YOKE LOADING GATE</span>
+          <h6 class="mb-0 fw-bold" style="color: #172033; font-size: 15px;">Barcode scan verifier</h6>
         </div>
       </div>
+      <button type="button" class="btn-close" onclick="closePokaScanModal()"></button>
+    </div>
+
+    <!-- SUBHEADER STRIP -->
+    <div class="poka-sub-strip">
+      <div class="poka-sub-item">
+        <span>SHIPMENT</span>
+        <strong>#SHP-2408</strong>
+      </div>
+      <div class="poka-sub-item">
+        <span>VEHICLE</span>
+        <strong>B 9123 KLA</strong>
+      </div>
+      <div class="poka-sub-item">
+        <span>DOCK</span>
+        <strong>Dock 02</strong>
+      </div>
+      <div class="poka-sub-item">
+        <span>DESTINATION</span>
+        <strong>Jakarta DC</strong>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="poka-body">
+      <!-- PROGRESS -->
+      <div class="d-flex justify-content-between align-items-baseline mb-2">
+        <div>
+          <span style="font-size: 9px; color: #8A96A8;">Loading progress</span>
+          <div class="fw-bold fs-5" style="color: #172033;"><span id="pokaLoadedCount">48</span> <span class="text-muted fw-normal fs-6">/ 50 Pallets Loaded</span></div>
+        </div>
+        <span class="fw-bold" style="color: #2563EB; font-size: 14px;" id="pokaPct">96%</span>
+      </div>
+      <div class="progress mb-4" style="height: 6px; border-radius: 999px; background: #EDF1F5;">
+        <div id="pokaProgressBar" class="progress-bar" style="width: 96%; background: #2563EB; border-radius: 999px;"></div>
+      </div>
+
+      <!-- BIG VERIFICATION ALERT BOX -->
+      <div id="pokaAlertCard" class="poka-alert-box matched">
+        <div style="width: 38px; height: 38px; background: #D1FAE5; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #059669; font-size: 18px; flex-shrink: 0;" id="pokaAlertIcon">
+          <i class="bi bi-check-lg"></i>
+        </div>
+        <div class="flex-grow-1">
+          <span style="font-size: 8px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;" id="pokaAlertSub">LAST SCAN &bull; VERIFIED</span>
+          <div class="fw-bold fs-6" id="pokaAlertTitle">MATCHED: Part #BAT-CBI-60AH</div>
+          <div style="font-size: 11px; opacity: 0.85;" id="pokaAlertDesc">Lot CBI-2026-X &bull; Pallet 48 of 50</div>
+        </div>
+      </div>
+
+      <div class="text-end mb-2">
+        <button type="button" class="btn btn-link p-0 text-muted" style="font-size: 10px; text-decoration: underline;" onclick="togglePokaMismatchDemo()">
+          Simulate mismatch state
+        </button>
+      </div>
+
+      <!-- SCANNER INPUT BOX -->
+      <div class="scanner-input-container mb-3">
+        <i class="bi bi-upc-scan fs-5 text-primary"></i>
+        <input type="text" id="pokaBarcodeField" placeholder="Scan next pallet barcode..." autocomplete="off" />
+        <span class="badge bg-light text-primary border" style="font-size: 9px;">Auto-focus ON</span>
+      </div>
+
+      <!-- FOOTER META -->
+      <div class="d-flex justify-content-between align-items-center small text-muted mb-4" style="font-size: 10px;">
+        <div><i class="bi bi-clock me-1"></i> Last scanned just now by Operator <strong>Rizky A.</strong></div>
+        <div><strong>48 verified</strong> &bull; 0 mismatches</div>
+      </div>
+
+      <!-- COMPLETE BUTTON -->
+      <a asp-controller="Dispatch" asp-action="Print" asp-route-id="1" class="btn btn-dark w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-2" style="background: #101B33; border-radius: 10px;">
+        <i class="bi bi-check2-circle fs-5"></i>
+        <span>Complete Loading &amp; Print Official Delivery Note</span>
+        <span class="badge bg-secondary opacity-75 font-monospace fw-normal ms-1" style="font-size: 10px;">Surat Jalan A4</span>
+      </a>
     </div>
   </div>
-</nav>
+</div>
 
-<main class="container-fluid px-lg-4 py-4">
-  @if (TempData["Success"] is string ok)
-  {
-    <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 d-flex align-items-center gap-2 mb-4" role="alert" style="border-radius: 12px; background: #ecfdf5; color: #065f46;">
-      <i class="bi bi-check-circle-fill fs-5 text-success"></i>
-      <div><strong>Sukses!</strong> @ok</div>
-      <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-  }
-  @RenderBody()
-</main>
-
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  // Topbar Live Clock
+  function updateTopbarClock() {
+    const el = document.getElementById('topbarClock');
+    if (!el) return;
+    const now = new Date();
+    el.innerText = now.toTimeString().split(' ')[0];
+  }
+  updateTopbarClock();
+  setInterval(updateTopbarClock, 1000);
+
+  // Keyboard shortcut Ctrl+K / Cmd+K to focus search
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      const input = document.getElementById('globalSearchInput');
+      if (input) input.focus();
+    }
+  });
+
+  // Poka-Yoke Modal Functions
+  function openPokaScanModal() {
+    const m = document.getElementById('pokaScanModal');
+    if (m) {
+      m.style.display = 'flex';
+      setTimeout(() => document.getElementById('pokaBarcodeField')?.focus(), 100);
+    }
+  }
+
+  function closePokaScanModal() {
+    const m = document.getElementById('pokaScanModal');
+    if (m) m.style.display = 'none';
+  }
+
+  let isMismatchState = false;
+  function togglePokaMismatchDemo() {
+    const card = document.getElementById('pokaAlertCard');
+    const icon = document.getElementById('pokaAlertIcon');
+    const sub = document.getElementById('pokaAlertSub');
+    const title = document.getElementById('pokaAlertTitle');
+    const desc = document.getElementById('pokaAlertDesc');
+
+    isMismatchState = !isMismatchState;
+    if (isMismatchState) {
+      card.className = 'poka-alert-box mismatch';
+      icon.style.background = '#FEE2E2';
+      icon.style.color = '#DC2626';
+      icon.innerHTML = '<i class="bi bi-x-lg"></i>';
+      sub.innerText = 'POKA-YOKE REJECTED \u2022 MISMATCH';
+      title.innerText = 'WARNING: WRONG PART #BAT-CBI-45AH';
+      desc.innerText = 'Pallet does not belong to Shipment #SHP-2408. Do not load!';
+    } else {
+      card.className = 'poka-alert-box matched';
+      icon.style.background = '#D1FAE5';
+      icon.style.color = '#059669';
+      icon.innerHTML = '<i class="bi bi-check-lg"></i>';
+      sub.innerText = 'LAST SCAN \u2022 VERIFIED';
+      title.innerText = 'MATCHED: Part #BAT-CBI-60AH';
+      desc.innerText = 'Lot CBI-2026-X \u2022 Pallet 48 of 50';
+    }
+  }
+</script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
