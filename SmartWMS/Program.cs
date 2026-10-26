@@ -18,7 +18,7 @@ using (var scope = app.Services.CreateScope())
     await DbInitializer.SeedAsync(db);
 }
 
-if (!app.Environment.IsDevelopment()) app.UseExceptionHandler("/Home/Error");
+app.UseDeveloperExceptionPage();
 app.UseStaticFiles();
 app.UseRouting();
 app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
