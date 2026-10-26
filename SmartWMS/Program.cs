@@ -8,6 +8,7 @@ builder.Services.AddDbContext<AppDbContext>(o =>
     o.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IDispatchService, DispatchService>();
+builder.Services.AddScoped<IInternalService, InternalService>();
 
 var app = builder.Build();
 

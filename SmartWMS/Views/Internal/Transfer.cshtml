@@ -1,0 +1,156 @@
+@model StockTransferVm
+@{
+  ViewData["Title"] = "Transfer Stok Antar Rak";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+  <div>
+    <h3 class="fw-bold mb-1" style="letter-spacing: -0.03em;">Relokasi Stok Antar Rak (Bin-to-Bin Transfer)</h3>
+    <p class="text-muted mb-0 small"><i class="bi bi-arrow-left-right me-1"></i> Pemindahan Stok Fisik Antar Rak / Lantai dengan Validasi Kapasitas &amp; Audit Trail</p>
+  </div>
+  <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary btn-sm px-3 d-flex align-items-center gap-1">
+    <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
+  </a>
+</div>
+
+@if (TempData["Error"] is string err)
+{
+  <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius: 12px;">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i> @err
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+}
+
+<div class="row g-4">
+  <!-- FORM TRANSFER -->
+  <div class="col-lg-5">
+    <div class="modern-card">
+      <div class="card-header-clean">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-box-arrow-right text-primary"></i>
+          <span>Formulir Pemindahan Stok</span>
+        </div>
+      </div>
+      <div class="p-3 p-md-4">
+        <form asp-action="SubmitTransfer" method="post">
+          <div class="mb-3">
+            <label class="form-label">Pilih Stok Asal (Rak &amp; Lot) <span class="text-danger">*</span></label>
+            <select name="balanceId" id="sourceSelect" class="form-select" required>
+              <option value="">-- Pilih Stok Sumber --</option>
+              @foreach (var b in Model.AvailableBalances)
+              {
+                <option value="@b.Id" data-qty="@b.Quantity" data-loc="@b.Location.LocationCode">
+                  [@b.Location.LocationCode] @b.Item.PartNumber &middot; Lot @b.LotNumber (Tersedia: @b.Quantity unit)
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Pilih Lokasi Tujuan <span class="text-danger">*</span></label>
+            <select name="targetLocationId" class="form-select" required>
+              <option value="">-- Pilih Rak / Lantai Tujuan --</option>
+              @foreach (var l in Model.TargetLocations)
+              {
+                var rem = l.MaxCapacity - l.CurrentQty;
+                var isFull = rem <= 0;
+                <option value="@l.Id" disabled="@isFull">
+                  @l.LocationCode (@l.ZoneType) &mdash; Sisa Kapasitas: @rem unit @(isFull ? "[PENUH]" : "")
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label">Jumlah Unit (Qty) <span class="text-danger">*</span></label>
+              <input name="qty" id="qtyInput" type="number" min="1" class="form-control" placeholder="Qty" required />
+            </div>
+            <div class="col-6">
+              <label class="form-label">Nama Operator</label>
+              <input name="operatorName" class="form-control" value="OPERATOR_WH" />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Alasan / Catatan Pemindahan</label>
+            <input name="notes" class="form-control" placeholder="misal: Relokasi dari staging ke rak tier 2" />
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-2">
+            <i class="bi bi-arrow-left-right"></i> Eksekusi Transfer Stok
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIWAYAT TRANSFER -->
+  <div class="col-lg-7">
+    <div class="modern-card">
+      <div class="card-header-clean">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-clock-history text-primary"></i>
+          <span>10 Pemindahan Stok Terakhir</span>
+        </div>
+        <span class="badge bg-light text-dark border">Audit Trail Jurnal</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-modern align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Part / SKU</th>
+              <th>No. Lot</th>
+              <th>Perpindahan Rak</th>
+              <th>Qty</th>
+              <th>Operator</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (!Model.RecentTransfers.Any())
+            {
+              <tr>
+                <td colspan="6" class="text-center py-4 text-muted">Belum ada riwayat pemindahan stok antar rak.</td>
+              </tr>
+            }
+            @foreach (var t in Model.RecentTransfers)
+            {
+              <tr>
+                <td class="text-muted small">@t.CreatedAt.ToString("dd/MM HH:mm")</td>
+                <td>
+                  <span class="fw-bold">@t.Item.PartNumber</span>
+                </td>
+                <td>
+                  <code class="px-2 py-1 bg-light text-dark rounded border">@t.LotNumber</code>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border">@t.FromLocation?.LocationCode</span>
+                  <i class="bi bi-arrow-right text-primary mx-1"></i>
+                  <span class="badge bg-primary text-white">@t.ToLocation?.LocationCode</span>
+                </td>
+                <td>
+                  <span class="fw-bold text-primary">@t.Quantity</span> <small class="text-muted">unit</small>
+                </td>
+                <td>
+                  <span class="small text-muted"><i class="bi bi-person me-1"></i>@t.OperatorName</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+  $('#sourceSelect').on('change', function () {
+    const maxQty = $(this).find('option:selected').data('qty');
+    if (maxQty) {
+      $('#qtyInput').attr('max', maxQty).val(maxQty);
+    }
+  });
+</script>
+}

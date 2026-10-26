@@ -114,4 +114,19 @@ public class AuditTrailVm
     public List<Item> Items { get; set; } = new();
 }
 
+public class StockTransferVm
+{
+    public List<StoringBalance> AvailableBalances { get; set; } = new();
+    public List<StorageLocation> TargetLocations { get; set; } = new();
+    public List<StockMovement> RecentTransfers { get; set; } = new();
+}
+
+public class StockOpnameVm
+{
+    public List<StoringBalance> Balances { get; set; } = new();
+    public List<StorageLocation> Locations { get; set; } = new();
+    public string? SelectedLocation { get; set; }
+}
+
+
 

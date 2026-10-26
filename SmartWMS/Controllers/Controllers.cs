@@ -102,4 +102,13 @@ public class DispatchController : Controller
         if (d != null && d.Status == DoStatus.Planned) { d.Status = DoStatus.Cancelled; await _db.SaveChangesAsync(); }
         return RedirectToAction(nameof(Index), new { date = d?.DeliveryDate.ToString("yyyy-MM-dd") });
     }
+
+    [HttpGet("Dispatch/Print/{id:int}")]
+    public async Task<IActionResult> Print(int id)
+    {
+        var d = await _db.Deliveries
+            .Include(x => x.Details).ThenInclude(x => x.Item)
+            .FirstOrDefaultAsync(x => x.Id == id);
+        return d == null ? NotFound() : View(d);
+    }
 }

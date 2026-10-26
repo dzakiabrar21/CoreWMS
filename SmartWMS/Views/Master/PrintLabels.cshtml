@@ -1,0 +1,115 @@
+@{
+  ViewData["Title"] = "Cetak Label Barcode & QR Code";
+  var type = (string)ViewBag.Type;
+  var locs = (List<StorageLocation>)ViewBag.Locations;
+  var items = (List<Item>)ViewBag.Items;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3 d-print-none">
+  <div>
+    <h3 class="fw-bold mb-1" style="letter-spacing: -0.03em;">Generator &amp; Cetak Label Stiker Gudang</h3>
+    <p class="text-muted mb-0 small"><i class="bi bi-upc-scan me-1"></i> Cetak Label Fisik Barcode / QR Code untuk Slot Rak, Palet, &amp; Karton Barang</p>
+  </div>
+  <div class="d-flex gap-2">
+    <button onclick="window.print()" class="btn btn-primary d-flex align-items-center gap-2">
+      <i class="bi bi-printer"></i> Cetak Stiker (Print)
+    </button>
+  </div>
+</div>
+
+<!-- TOGGLE TABS (D-PRINT-NONE) -->
+<div class="nav-pills-modern mb-4 d-print-none">
+  <a class="nav-link @(type == "RACK" ? "active" : "")" asp-action="PrintLabels" asp-route-type="RACK">
+    <i class="bi bi-grid-3x3 me-1"></i> Label Rak &amp; Lantai Gudang (@locs.Count Lokasi)
+  </a>
+  <a class="nav-link @(type == "SKU" ? "active" : "")" asp-action="PrintLabels" asp-route-type="SKU">
+    <i class="bi bi-box-seam me-1"></i> Label Palet &amp; Master SKU (@items.Count Produk)
+  </a>
+</div>
+
+<style>
+  .label-sticker {
+    border: 2px dashed #94a3b8;
+    border-radius: 8px;
+    padding: 16px;
+    background: #ffffff;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    page-break-inside: avoid;
+  }
+  .barcode-mock {
+    font-family: monospace;
+    letter-spacing: 4px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    background: #0f172a;
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+  @@media print {
+    .d-print-none, .navbar-custom { display: none !important; }
+    body { background: #fff !important; }
+    .label-sticker { border: 1.5px solid #000 !important; box-shadow: none !important; margin-bottom: 12px; }
+  }
+</style>
+
+@if (type == "RACK")
+{
+  <div class="row g-3">
+    @foreach (var l in locs)
+    {
+      <div class="col-6 col-md-4 col-xl-3">
+        <div class="label-sticker">
+          <div class="d-flex justify-content-between align-items-start border-bottom pb-2 mb-2">
+            <div>
+              <div class="fw-bold small text-muted">COREWMS &middot; @(l.Warehouse?.Code ?? "WH-01")</div>
+              <div class="fs-5 fw-bold text-dark">@l.LocationCode</div>
+            </div>
+            <span class="badge bg-dark">@l.ZoneType</span>
+          </div>
+
+          <div class="text-center my-2">
+            <div class="barcode-mock mb-1">||| | | |||| | |||</div>
+            <div class="small fw-bold text-muted">*@l.LocationCode*</div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center border-top pt-2 small text-muted">
+            <span>Kapasitas Max: <strong>@l.MaxCapacity</strong> unit</span>
+            <span>@(string.IsNullOrEmpty(l.Aisle) ? "" : $"Aisle {l.Aisle}")</span>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+}
+else
+{
+  <div class="row g-3">
+    @foreach (var i in items)
+    {
+      <div class="col-6 col-md-4 col-xl-3">
+        <div class="label-sticker">
+          <div class="border-bottom pb-2 mb-2">
+            <div class="fw-bold small text-muted">MASTER SKU LABEL</div>
+            <div class="fs-5 fw-bold text-primary">@i.PartNumber</div>
+            <div class="small text-truncate" title="@i.ItemName">@i.ItemName</div>
+          </div>
+
+          <div class="text-center my-2">
+            <div class="barcode-mock mb-1">|||| | || ||| || |||</div>
+            <div class="small fw-bold text-muted">*@i.PartNumber*</div>
+          </div>
+
+          <div class="d-flex justify-content-between border-top pt-2 small text-muted">
+            <span>Satuan: <strong>@i.UOM</strong></span>
+            <span>Masa: <strong>@i.MaxShelfLifeDays hr</strong></span>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+}

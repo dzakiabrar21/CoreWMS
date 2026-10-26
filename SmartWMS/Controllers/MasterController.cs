@@ -110,4 +110,14 @@ public class MasterController : Controller
 
         return View(vm);
     }
+
+    // 4. GENERATOR & CETAK LABEL BARCODE / QR CODE (RAK & SKU)
+    [HttpGet]
+    public async Task<IActionResult> PrintLabels(string? type)
+    {
+        ViewBag.Type = type ?? "RACK";
+        ViewBag.Locations = await _db.StorageLocations.Where(l => l.IsActive).OrderBy(l => l.LocationCode).ToListAsync();
+        ViewBag.Items = await _db.Items.OrderBy(i => i.PartNumber).ToListAsync();
+        return View();
+    }
 }
