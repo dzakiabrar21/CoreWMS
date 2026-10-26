@@ -25,8 +25,11 @@
     </button>
     <div class="collapse navbar-collapse" id="navContent">
       <div class="navbar-nav ms-lg-4 gap-1">
-        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")" asp-controller="Home" asp-action="Index">
-          <i class="bi bi-grid-1x2-fill"></i> Dashboard
+        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" asp-controller="Home" asp-action="Index">
+          <i class="bi bi-house-door-fill"></i> Portal
+        </a>
+        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")" asp-controller="Home" asp-action="Dashboard">
+          <i class="bi bi-grid-1x2-fill"></i> Dashboard Gudang
         </a>
         <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Storing" ? "active" : "")" asp-controller="Storing" asp-action="Create">
           <i class="bi bi-box-arrow-in-down"></i> Checksheet Storing

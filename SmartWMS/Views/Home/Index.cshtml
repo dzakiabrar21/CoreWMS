@@ -1,183 +1,299 @@
-@model DashboardVm
 @{
-  ViewData["Title"] = "Dashboard Pergudangan";
+  ViewData["Title"] = "Portal Utama - Enterprise WMS";
 }
 
-<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-  <div>
-    <h3 class="fw-bold mb-1" style="letter-spacing: -0.03em;">Dashboard Gudang Finished Goods</h3>
-    <p class="text-muted mb-0 small"><i class="bi bi-clock-history me-1"></i> Pemantauan Okupansi Rak, Kontrol Kualitas Kimia Baterai, &amp; Dispatch Real-Time</p>
-  </div>
-  <div class="d-flex gap-2">
-    <a asp-controller="Storing" asp-action="Create" class="btn btn-outline-primary btn-sm px-3 d-flex align-items-center gap-1">
-      <i class="bi bi-plus-circle"></i> Input Storing
-    </a>
-    <a asp-controller="Dispatch" asp-action="Create" class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1">
-      <i class="bi bi-truck"></i> Buat DO Baru
-    </a>
-  </div>
-</div>
-
-<!-- 4 KPI CARDS -->
-<div class="row g-3 mb-4">
-  <div class="col-6 col-xl-3">
-    <div class="metric-card primary">
-      <div class="d-flex justify-content-between align-items-start">
-        <div>
-          <div class="metric-title">Total Kapasitas</div>
-          <div class="metric-value">@Model.TotalCapacity.ToString("N0")</div>
-          <div class="small text-muted mt-2"><i class="bi bi-layers me-1"></i> Total Slot Rak &amp; Lantai</div>
-        </div>
-        <div class="metric-icon-wrap primary">
-          <i class="bi bi-building"></i>
-        </div>
+<div class="portal-splash-wrapper">
+  <!-- HERO SPLASH SECTION -->
+  <div class="portal-hero-card mb-5">
+    <div class="portal-hero-overlay"></div>
+    <div class="portal-hero-content">
+      <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3 portal-badge-pill">
+        <span class="portal-pulse-dot"></span>
+        <span class="fw-semibold text-uppercase tracking-wider" style="font-size: 0.72rem; letter-spacing: 0.08em;">
+          Enterprise Warehouse OS &bull; Multi-Industry Ready
+        </span>
       </div>
-    </div>
-  </div>
 
-  <div class="col-6 col-xl-3">
-    <div class="metric-card success">
-      <div class="d-flex justify-content-between align-items-start">
-        <div class="w-100 me-2">
-          <div class="metric-title">Keterisian Gudang</div>
-          <div class="metric-value">@Model.OccupancyPct%</div>
-          <div class="progress mt-2" style="height: 6px; border-radius: 9999px; background: #e2e8f0;">
-            <div class="progress-bar bg-success" style="width: @Model.OccupancyPct.ToString(System.Globalization.CultureInfo.InvariantCulture)%;"></div>
+      <h1 class="portal-hero-title mb-3">
+        CoreWMS <span class="portal-gradient-text">Enterprise Portal</span>
+      </h1>
+
+      <p class="portal-hero-desc mb-4">
+        Platform manajemen pergudangan cerdas untuk Manufaktur, Otomotif, Elektronik, &amp; FMCG. 
+        Mengintegrasikan otomatisasi Inbound Storing, Poka-Yoke Dispatch Anti-Salah Kirim, Relokasi Bin-to-Bin, dan Audit Trail Mutasi Real-Time.
+      </p>
+
+      <!-- SYSTEM TELEMETRY STRIP -->
+      <div class="portal-telemetry-bar mb-4">
+        <div class="telemetry-item">
+          <i class="bi bi-hdd-network text-success"></i>
+          <div>
+            <span class="telemetry-label">Status Server</span>
+            <span class="telemetry-value">ONLINE (WH-JKT-01)</span>
           </div>
-          <div class="small text-muted mt-2"><i class="bi bi-box-seam me-1"></i> @Model.TotalQty.ToString("N0") unit tersimpan</div>
         </div>
-        <div class="metric-icon-wrap success">
-          <i class="bi bi-pie-chart-fill"></i>
+        <div class="telemetry-divider"></div>
+        <div class="telemetry-item">
+          <i class="bi bi-shield-check text-info"></i>
+          <div>
+            <span class="telemetry-label">Quality Gate</span>
+            <span class="telemetry-value">POKA-YOKE 100% ACTIVE</span>
+          </div>
         </div>
+        <div class="telemetry-divider"></div>
+        <div class="telemetry-item">
+          <i class="bi bi-clock-history text-warning"></i>
+          <div>
+            <span class="telemetry-label">Waktu Sistem</span>
+            <span class="telemetry-value" id="portalClock">Memuat...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN ACTION BUTTONS -->
+      <div class="d-flex flex-wrap gap-3 align-items-center">
+        <a asp-controller="Home" asp-action="Dashboard" class="btn btn-portal-primary btn-lg px-4 py-3 shadow-lg">
+          <i class="bi bi-speedometer2 me-2 fs-5"></i>
+          <span>Buka Dashboard Operasional</span>
+          <i class="bi bi-arrow-right ms-2 fs-5"></i>
+        </a>
+        <a asp-controller="Storing" asp-action="Create" class="btn btn-portal-glass btn-lg px-3 py-3">
+          <i class="bi bi-box-arrow-in-down me-2 text-success"></i>
+          <span>Checksheet Storing</span>
+        </a>
+        <a asp-controller="Dispatch" asp-action="Index" class="btn btn-portal-glass btn-lg px-3 py-3">
+          <i class="bi bi-truck me-2 text-primary"></i>
+          <span>Heijunka Dispatch</span>
+        </a>
       </div>
     </div>
   </div>
 
-  <div class="col-6 col-xl-3">
-    <div class="metric-card warning">
-      <div class="d-flex justify-content-between align-items-start">
-        <div>
-          <div class="metric-title">Lot Aging Alert</div>
-          <div class="metric-value text-warning">@Model.AgingCount</div>
-          <div class="small text-muted mt-2"><i class="bi bi-shield-exclamation me-1"></i> Simpan &gt; 90 hari (Perlu Cas)</div>
+  <!-- MODULE QUICK LAUNCHPAD -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h4 class="fw-bold mb-1" style="letter-spacing: -0.02em;">Modul Operasional Gudang</h4>
+      <p class="text-muted small mb-0">Akses langsung ke alur kerja operasional dan manajemen inventaris harian</p>
+    </div>
+    <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill small">
+      <i class="bi bi-grid-fill me-1 text-primary"></i> 8 Modul Siap Pakai
+    </span>
+  </div>
+
+  <div class="row g-3 mb-5">
+    <!-- Card 1: Dashboard Gudang -->
+    <div class="col-md-6 col-xl-3">
+      <a asp-controller="Home" asp-action="Dashboard" class="portal-module-card text-decoration-none">
+        <div class="portal-module-icon icon-blue">
+          <i class="bi bi-grid-3x3-gap-fill"></i>
         </div>
-        <div class="metric-icon-wrap warning">
-          <i class="bi bi-battery-charging"></i>
+        <div class="portal-module-body">
+          <div class="portal-module-badge badge-blue">Telemetry Live</div>
+          <h5 class="portal-module-title">Visualisasi Rak &amp; Okupansi</h5>
+          <p class="portal-module-desc">Pemantauan visual slot rak A1-C4, kapasitas lantai, dan metrik kesehatan kimia baterai.</p>
         </div>
-      </div>
+        <div class="portal-module-footer">
+          <span>Luncurkan Modul</span>
+          <i class="bi bi-chevron-right"></i>
+        </div>
+      </a>
+    </div>
+
+    <!-- Card 2: Inbound Storing -->
+    <div class="col-md-6 col-xl-3">
+      <a asp-controller="Storing" asp-action="Create" class="portal-module-card text-decoration-none">
+        <div class="portal-module-icon icon-emerald">
+          <i class="bi bi-box-arrow-in-down"></i>
+        </div>
+        <div class="portal-module-body">
+          <div class="portal-module-badge badge-emerald">Inbound Flow</div>
+          <h5 class="portal-module-title">Checksheet Storing Inbound</h5>
+          <p class="portal-module-desc">Penerimaan barang dari produksi, validasi barcode Lot/Sub-Lot, dan auto-suggest slot rak.</p>
+        </div>
+        <div class="portal-module-footer">
+          <span>Luncurkan Modul</span>
+          <i class="bi bi-chevron-right"></i>
+        </div>
+      </a>
+    </div>
+
+    <!-- Card 3: Relokasi Bin-to-Bin -->
+    <div class="col-md-6 col-xl-3">
+      <a asp-controller="Internal" asp-action="Transfer" class="portal-module-card text-decoration-none">
+        <div class="portal-module-icon icon-purple">
+          <i class="bi bi-arrow-left-right"></i>
+        </div>
+        <div class="portal-module-body">
+          <div class="portal-module-badge badge-purple">Operasi Internal</div>
+          <h5 class="portal-module-title">Relokasi Antar Rak (Bin-to-Bin)</h5>
+          <p class="portal-module-desc">Pemindahan stok antar-bin secara fleksibel dengan validasi kapasitas dan update mutasi instan.</p>
+        </div>
+        <div class="portal-module-footer">
+          <span>Luncurkan Modul</span>
+          <i class="bi bi-chevron-right"></i>
+        </div>
+      </a>
+    </div>
+
+    <!-- Card 4: Stock Opname -->
+    <div class="col-md-6 col-xl-3">
+      <a asp-controller="Internal" asp-action="StockOpname" class="portal-module-card text-decoration-none">
+        <div class="portal-module-icon icon-amber">
+          <i class="bi bi-clipboard-check"></i>
+        </div>
+        <div class="portal-module-body">
+          <div class="portal-module-badge badge-amber">Cycle Counting</div>
+          <h5 class="portal-module-title">Stock Opname Berkala</h5>
+          <p class="portal-module-desc">Audit stok fisik vs sistem tanpa shutdown gudang dengan rekonsiliasi varians otomatis.</p>
+        </div>
+        <div class="portal-module-footer">
+          <span>Luncurkan Modul</span>
+          <i class="bi bi-chevron-right"></i>
+        </div>
+      </a>
+    </div>
+
+    <!-- Card 5: Dispatch & Poka-Yoke -->
+    <div class="col-md-6 col-xl-3">
+      <a asp-controller="Dispatch" asp-action="Index" class="portal-module-card text-decoration-none">
+        <div class="portal-module-icon icon-rose">
+          <i class="bi bi-truck"></i>
+        </div>
+        <div class="portal-module-body">
+          <div class="portal-module-badge badge-rose">Zero Misdelivery</div>
+          <h5 class="portal-module-title">Heijunka Dispatch &amp; Scan</h5>
+          <p class="portal-module-desc">Poka-Yoke scanning barcode sebelum muat ke armada truk dan cetak Surat Jalan resmi A4.</p>
+        </div>
+        <div class="portal-module-footer">
+          <span>Luncurkan Modul</span>
+          <i class="bi bi-chevron-right"></i>
+        </div>
+      </a>
+    </div>
+
+    <!-- Card 6: Laporan Sub-Lot & Aging -->
+    <div class="col-md-6 col-xl-3">
+      <a asp-controller="Report" asp-action="SubLot" class="portal-module-card text-decoration-none">
+        <div class="portal-module-icon icon-cyan">
+          <i class="bi bi-file-earmark-bar-graph"></i>
+        </div>
+        <div class="portal-module-body">
+          <div class="portal-module-badge badge-cyan">Analitik &amp; Aging</div>
+          <h5 class="portal-module-title">Laporan Stok &amp; Sub-Lot</h5>
+          <p class="portal-module-desc">Monitoring kedaluwarsa, filter multi-kriteria rak &amp; status, serta export data ke CSV/Excel.</p>
+        </div>
+        <div class="portal-module-footer">
+          <span>Luncurkan Modul</span>
+          <i class="bi bi-chevron-right"></i>
+        </div>
+      </a>
+    </div>
+
+    <!-- Card 7: Cetak Label QR / Barcode -->
+    <div class="col-md-6 col-xl-3">
+      <a asp-controller="Master" asp-action="PrintLabels" class="portal-module-card text-decoration-none">
+        <div class="portal-module-icon icon-indigo">
+          <i class="bi bi-upc-scan"></i>
+        </div>
+        <div class="portal-module-body">
+          <div class="portal-module-badge badge-indigo">Barcode Engine</div>
+          <h5 class="portal-module-title">Cetak Label QR &amp; Barcode</h5>
+          <p class="portal-module-desc">Generator stiker label SKU palet dan barcode lokasi rak gudang standar industri.</p>
+        </div>
+        <div class="portal-module-footer">
+          <span>Luncurkan Modul</span>
+          <i class="bi bi-chevron-right"></i>
+        </div>
+      </a>
+    </div>
+
+    <!-- Card 8: Master Produk & Audit Trail -->
+    <div class="col-md-6 col-xl-3">
+      <a asp-controller="Master" asp-action="AuditTrail" class="portal-module-card text-decoration-none">
+        <div class="portal-module-icon icon-slate">
+          <i class="bi bi-journal-text"></i>
+        </div>
+        <div class="portal-module-body">
+          <div class="portal-module-badge badge-slate">Kepatuhan ISO</div>
+          <h5 class="portal-module-title">Buku Besar Audit Mutasi</h5>
+          <p class="portal-module-desc">Log histori pencatatan ganda (double-entry) setiap perpindahan dan penyesuaian barang.</p>
+        </div>
+        <div class="portal-module-footer">
+          <span>Luncurkan Modul</span>
+          <i class="bi bi-chevron-right"></i>
+        </div>
+      </a>
     </div>
   </div>
 
-  <div class="col-6 col-xl-3">
-    <div class="metric-card info">
-      <div class="d-flex justify-content-between align-items-start">
-        <div>
-          <div class="metric-title">DO Ritase Hari Ini</div>
-          <div class="metric-value text-primary">@Model.TodayDoCount</div>
-          <div class="small text-muted mt-2"><i class="bi bi-calendar-check me-1"></i> Pengiriman aktif terdaftar</div>
+  <!-- VALUE PROPOSITION HIGHLIGHT STRIP -->
+  <div class="portal-features-banner p-4 p-md-5 rounded-4 shadow-sm mb-4">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-7">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-primary bg-opacity-10 text-primary small fw-semibold mb-2">
+          <i class="bi bi-award-fill"></i> Standar Logistik Industri Terdepan
         </div>
-        <div class="metric-icon-wrap info">
-          <i class="bi bi-truck-front-fill"></i>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- WAREHOUSE GRID & CHART -->
-<div class="row g-4">
-  <div class="col-lg-8">
-    <div class="modern-card h-100">
-      <div class="card-header-clean">
-        <div class="d-flex align-items-center gap-2">
-          <i class="bi bi-grid-3x3 text-primary"></i>
-          <span>Status Grid Gudang (Floor &amp; Racks)</span>
-        </div>
-        <div class="d-flex flex-wrap gap-2">
-          <span class="status-pill safe"><i class="bi bi-check-circle-fill text-success"></i> Aman (&lt;80%)</span>
-          <span class="status-pill warning"><i class="bi bi-exclamation-triangle-fill text-warning"></i> Padat (&ge;80%)</span>
-          <span class="status-pill danger"><i class="bi bi-exclamation-octagon-fill text-danger"></i> Aging / Drop V</span>
-        </div>
-      </div>
-      <div class="p-3 p-md-4">
+        <h4 class="fw-bold mb-2">Mengapa Enterprise Memilih CoreWMS?</h4>
+        <p class="text-muted mb-4 small">
+          Dirancang untuk menghilangkan kesalahan human-error pada warehouse lantai produksi, pusat distribusi FMCG, dan suku cadang otomotif.
+        </p>
         <div class="row g-3">
-          @foreach (var t in Model.Tiles)
-          {
-            var statusClass = t.Color == "danger" ? "status-danger" : t.Color == "warning" ? "status-warning" : "status-safe";
-            var pct = t.Max > 0 ? (t.Qty * 100 / t.Max) : 0;
-            var barColor = t.Color == "danger" ? "bg-danger" : t.Color == "warning" ? "bg-warning" : "bg-success";
-
-            <div class="col-6 col-md-4 col-xl-3">
-              <div class="rack-tile @statusClass">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="rack-code">@t.Code</span>
-                  <span class="rack-zone-badge @(t.Zone == "RACK" ? "zone-rack" : "zone-floor")">@t.Zone</span>
-                </div>
-                
-                <div class="rack-progress-wrap">
-                  <div class="d-flex justify-content-between rack-qty-text mb-1">
-                    <span>@t.Qty <small class="text-muted">/ @t.Max</small></span>
-                    <span class="fw-bold">@pct%</span>
-                  </div>
-                  <div class="progress" style="height: 5px; border-radius: 9999px; background: #e2e8f0;">
-                    <div class="progress-bar @barColor" style="width: @pct%;"></div>
-                  </div>
-                </div>
-
-                <div class="mt-2 text-end">
-                  @if (t.Color == "danger")
-                  {
-                    <span class="status-pill danger"><i class="bi bi-exclamation-circle-fill"></i> Kritis</span>
-                  }
-                  else if (t.Color == "warning")
-                  {
-                    <span class="status-pill warning"><i class="bi bi-dash-circle-fill"></i> Padat</span>
-                  }
-                  else
-                  {
-                    <span class="status-pill safe"><i class="bi bi-check-circle-fill"></i> Normal</span>
-                  }
-                </div>
+          <div class="col-sm-6">
+            <div class="d-flex gap-2 align-items-start">
+              <i class="bi bi-check2-circle text-primary fs-5 mt-1"></i>
+              <div>
+                <strong class="d-block small">Poka-Yoke Anti-Salah Kirim</strong>
+                <span class="text-muted" style="font-size: 0.8rem;">Sistem otomatis memblokir muatan jika barcode SKU/Lot tidak cocok dengan Surat Jalan.</span>
               </div>
             </div>
-          }
+          </div>
+          <div class="col-sm-6">
+            <div class="d-flex gap-2 align-items-start">
+              <i class="bi bi-check2-circle text-primary fs-5 mt-1"></i>
+              <div>
+                <strong class="d-block small">Multi-Industry Architecture</strong>
+                <span class="text-muted" style="font-size: 0.8rem;">Dukungan strategi rotasi FIFO &amp; FEFO, satuan UOM fleksibel, dan kapasitas multi-zona.</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="d-flex gap-2 align-items-start">
+              <i class="bi bi-check2-circle text-primary fs-5 mt-1"></i>
+              <div>
+                <strong class="d-block small">Audit Trail Transparan</strong>
+                <span class="text-muted" style="font-size: 0.8rem;">Setiap mutasi dicatat dalam double-entry ledger lengkap dengan timestamp dan user ID.</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="d-flex gap-2 align-items-start">
+              <i class="bi bi-check2-circle text-primary fs-5 mt-1"></i>
+              <div>
+                <strong class="d-block small">Integrasi Printer Barcode &amp; Dokumen</strong>
+                <span class="text-muted" style="font-size: 0.8rem;">Cetak label rak, stiker palet QR, dan Surat Jalan format A4 standar resmi tanpa aplikasi tambahan.</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
-
-  <div class="col-lg-4">
-    <div class="modern-card h-100">
-      <div class="card-header-clean">
-        <div class="d-flex align-items-center gap-2">
-          <i class="bi bi-pie-chart text-primary"></i>
-          <span>Komposisi Mutu Stok</span>
-        </div>
-      </div>
-      <div class="p-3 p-md-4 d-flex flex-column justify-content-between">
-        <div style="position: relative; height: 230px;" class="mb-4">
-          <canvas id="donut"></canvas>
-        </div>
-        
-        <div class="bg-light p-3 rounded-3 border">
-          <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
-            <span class="small fw-semibold text-muted d-flex align-items-center gap-2">
-              <span style="width: 10px; height: 10px; border-radius: 50%; background-color: #10b981; display: inline-block;"></span> Normal
-            </span>
-            <span class="fw-bold fs-6">@Model.Normal.ToString("N0") <small class="text-muted fw-normal">unit</small></span>
+      <div class="col-lg-5 text-center text-lg-end">
+        <div class="portal-cta-box p-4 rounded-4 bg-white border shadow-sm text-start">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="brand-icon" style="width: 48px; height: 48px; font-size: 1.5rem;">
+              <i class="bi bi-boxes"></i>
+            </div>
+            <div>
+              <h6 class="fw-bold mb-0">CoreWMS Enterprise</h6>
+              <span class="badge bg-success-subtle text-success border border-success-subtle small">v2.4 Production Active</span>
+            </div>
           </div>
-          <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
-            <span class="small fw-semibold text-muted d-flex align-items-center gap-2">
-              <span style="width: 10px; height: 10px; border-radius: 50%; background-color: #f59e0b; display: inline-block;"></span> Aging Alert (&gt;90d)
-            </span>
-            <span class="fw-bold fs-6 text-warning">@Model.Aging.ToString("N0") <small class="text-muted fw-normal">unit</small></span>
-          </div>
-          <div class="d-flex justify-content-between align-items-center py-1">
-            <span class="small fw-semibold text-muted d-flex align-items-center gap-2">
-              <span style="width: 10px; height: 10px; border-radius: 50%; background-color: #ef4444; display: inline-block;"></span> Low Voltage (&lt;12.4V)
-            </span>
-            <span class="fw-bold fs-6 text-danger">@Model.LowVoltage.ToString("N0") <small class="text-muted fw-normal">unit</small></span>
-          </div>
+          <p class="small text-muted mb-3">
+            Siap untuk memantau pergerakan gudang hari ini? Masuk langsung ke dashboard utama untuk melihat utilisasi rak secara live.
+          </p>
+          <a asp-controller="Home" asp-action="Dashboard" class="btn btn-primary w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2">
+            <span>Masuk ke Dashboard</span>
+            <i class="bi bi-arrow-right"></i>
+          </a>
         </div>
       </div>
     </div>
@@ -186,39 +302,23 @@
 
 @section Scripts {
 <script>
-  const ctx = document.getElementById('donut').getContext('2d');
-  new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Normal', 'Aging Alert', 'Low Voltage'],
-      datasets: [{
-        data: [@Model.Normal, @Model.Aging, @Model.LowVoltage],
-        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-        borderWidth: 2,
-        borderColor: '#ffffff',
-        hoverOffset: 6
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: false
-        },
-        tooltip: {
-          callbacks: {
-            label: function(context) {
-              const total = @(Model.Normal + Model.Aging + Model.LowVoltage);
-              const val = context.raw;
-              const pct = total > 0 ? Math.round((val / total) * 100) : 0;
-              return `${context.label}: ${val} unit (${pct}%)`;
-            }
-          }
-        }
-      },
-      cutout: '72%'
-    }
-  });
+  // Live Clock Update
+  function updateClock() {
+    const el = document.getElementById('portalClock');
+    if (!el) return;
+    const now = new Date();
+    const options = { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit',
+      hour12: false
+    };
+    el.innerText = now.toLocaleDateString('id-ID', options) + ' WIB';
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
 </script>
 }
