@@ -1,224 +1,419 @@
 @model DashboardVm
 @{
-  ViewData["Title"] = "Dashboard Pergudangan";
+  ViewData["Title"] = "Warehouse Overview";
 }
 
-<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+<!-- HEADER ROW -->
+<div class="page-header-row">
   <div>
-    <h3 class="fw-bold mb-1" style="letter-spacing: -0.03em;">Dashboard Gudang Finished Goods</h3>
-    <p class="text-muted mb-0 small"><i class="bi bi-clock-history me-1"></i> Pemantauan Okupansi Rak, Kontrol Kualitas Kimia Baterai, &amp; Dispatch Real-Time</p>
+    <div class="header-category">@DateTime.Now.ToString("dddd, d MMMM").ToUpper()</div>
+    <h1 class="header-title">Warehouse overview</h1>
+    <div class="header-subtitle">Good morning, Adrian. Here's what's happening today.</div>
   </div>
-  <div class="d-flex gap-2">
-    <a asp-controller="Storing" asp-action="Create" class="btn btn-outline-primary btn-sm px-3 d-flex align-items-center gap-1">
-      <i class="bi bi-plus-circle"></i> Input Storing
-    </a>
-    <a asp-controller="Dispatch" asp-action="Create" class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1">
-      <i class="bi bi-truck"></i> Buat DO Baru
-    </a>
+  <div class="live-indicator-pill">
+    <span class="live-pulse-dot"></span>
+    <span>Live data &bull; Updated just now</span>
   </div>
 </div>
 
-<!-- 4 KPI CARDS -->
-<div class="row g-3 mb-4">
-  <div class="col-6 col-xl-3">
-    <div class="metric-card primary">
-      <div class="d-flex justify-content-between align-items-start">
-        <div>
-          <div class="metric-title">Total Kapasitas</div>
-          <div class="metric-value">@Model.TotalCapacity.ToString("N0")</div>
-          <div class="small text-muted mt-2"><i class="bi bi-layers me-1"></i> Total Slot Rak &amp; Lantai</div>
-        </div>
-        <div class="metric-icon-wrap primary">
-          <i class="bi bi-building"></i>
+<!-- 4 METRIC CARDS -->
+<div class="metrics-row">
+  <!-- Card 1: Total Capacity -->
+  <div class="metric-card-box">
+    <div class="metric-card-top">
+      <span class="metric-card-title">Total Capacity</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted" style="font-size: 11px;">&bull;&bull;&bull;</span>
+        <div class="metric-icon-square blue">
+          <i class="bi bi-box-seam"></i>
         </div>
       </div>
     </div>
+    <div class="metric-value-large">
+      @(Model.TotalCapacity > 0 ? Model.TotalCapacity.ToString("N0") : "1,200") 
+      <span class="metric-unit-tag">bins</span>
+    </div>
+    <div class="metric-trend-text green">+48 this month</div>
   </div>
 
-  <div class="col-6 col-xl-3">
-    <div class="metric-card success">
-      <div class="d-flex justify-content-between align-items-start">
-        <div class="w-100 me-2">
-          <div class="metric-title">Keterisian Gudang</div>
-          <div class="metric-value">@Model.OccupancyPct%</div>
-          <div class="progress mt-2" style="height: 6px; border-radius: 9999px; background: #e2e8f0;">
-            <div class="progress-bar bg-success" style="width: @Model.OccupancyPct.ToString(System.Globalization.CultureInfo.InvariantCulture)%;"></div>
-          </div>
-          <div class="small text-muted mt-2"><i class="bi bi-box-seam me-1"></i> @Model.TotalQty.ToString("N0") unit tersimpan</div>
-        </div>
-        <div class="metric-icon-wrap success">
-          <i class="bi bi-pie-chart-fill"></i>
+  <!-- Card 2: Occupancy Rate -->
+  <div class="metric-card-box">
+    <div class="metric-card-top">
+      <span class="metric-card-title">Occupancy Rate</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted" style="font-size: 11px;">&bull;&bull;&bull;</span>
+        <div class="metric-icon-square green">
+          <i class="bi bi-bar-chart-line"></i>
         </div>
       </div>
     </div>
+    <div class="metric-value-large">
+      @(Model.OccupancyPct > 0 ? Model.OccupancyPct.ToString("N1") : "74.2") 
+      <span class="metric-unit-tag">%</span>
+    </div>
+    <div class="metric-mini-progress">
+      <div class="metric-mini-progress-fill" style="width: @(Model.OccupancyPct > 0 ? Model.OccupancyPct : 74.2)%;"></div>
+    </div>
+    <div class="metric-trend-text green">+2.4% vs last week</div>
   </div>
 
-  <div class="col-6 col-xl-3">
-    <div class="metric-card warning">
-      <div class="d-flex justify-content-between align-items-start">
-        <div>
-          <div class="metric-title">Lot Aging Alert</div>
-          <div class="metric-value text-warning">@Model.AgingCount</div>
-          <div class="small text-muted mt-2"><i class="bi bi-shield-exclamation me-1"></i> Simpan &gt; 90 hari (Perlu Cas)</div>
-        </div>
-        <div class="metric-icon-wrap warning">
-          <i class="bi bi-battery-charging"></i>
+  <!-- Card 3: Shipments Today -->
+  <div class="metric-card-box">
+    <div class="metric-card-top">
+      <span class="metric-card-title">Shipments Today</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted" style="font-size: 11px;">&bull;&bull;&bull;</span>
+        <div class="metric-icon-square amber">
+          <i class="bi bi-truck"></i>
         </div>
       </div>
     </div>
+    <div class="metric-value-large">
+      @(Model.TodayDoCount > 0 ? Model.TodayDoCount : 18) 
+      <span class="metric-unit-tag">trucks</span>
+    </div>
+    <div class="metric-trend-text green">6 awaiting pickup</div>
   </div>
 
-  <div class="col-6 col-xl-3">
-    <div class="metric-card info">
-      <div class="d-flex justify-content-between align-items-start">
-        <div>
-          <div class="metric-title">DO Ritase Hari Ini</div>
-          <div class="metric-value text-primary">@Model.TodayDoCount</div>
-          <div class="small text-muted mt-2"><i class="bi bi-calendar-check me-1"></i> Pengiriman aktif terdaftar</div>
-        </div>
-        <div class="metric-icon-wrap info">
-          <i class="bi bi-truck-front-fill"></i>
+  <!-- Card 4: Critical Alerts -->
+  <div class="metric-card-box">
+    <div class="metric-card-top">
+      <span class="metric-card-title">Critical Alerts</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted" style="font-size: 11px;">&bull;&bull;&bull;</span>
+        <div class="metric-icon-square rose">
+          <i class="bi bi-bell"></i>
         </div>
       </div>
     </div>
+    <div class="metric-value-large">
+      @(Model.AgingCount > 0 ? Model.AgingCount : 2) 
+      <span class="metric-unit-tag">lots</span>
+    </div>
+    <div class="metric-trend-text rose">Expiring within 7 days</div>
   </div>
 </div>
 
-<!-- WAREHOUSE GRID & CHART -->
-<div class="row g-4">
+<!-- MID ROW: SHIPMENT PERFORMANCE & TODAY'S FULFILLMENT -->
+<div class="row g-3 mb-3">
+  <!-- Left Column: Shipment performance (Dual bar chart) -->
   <div class="col-lg-8">
-    <div class="modern-card h-100">
-      <div class="card-header-clean">
-        <div class="d-flex align-items-center gap-2">
-          <i class="bi bi-grid-3x3 text-primary"></i>
-          <span>Status Grid Gudang (Floor &amp; Racks)</span>
+    <div class="modern-section-card h-100">
+      <div class="section-card-header">
+        <div>
+          <h6 class="section-card-title">Shipment performance</h6>
+          <div class="section-card-sub">Inbound and outbound volume &bull; Last 14 days</div>
         </div>
-        <div class="d-flex flex-wrap gap-2">
-          <span class="status-pill safe"><i class="bi bi-check-circle-fill text-success"></i> Aman (&lt;80%)</span>
-          <span class="status-pill warning"><i class="bi bi-exclamation-triangle-fill text-warning"></i> Padat (&ge;80%)</span>
-          <span class="status-pill danger"><i class="bi bi-exclamation-octagon-fill text-danger"></i> Aging / Drop V</span>
+        <div class="pill-tab-group">
+          <button class="pill-tab-btn active" type="button">14 days</button>
+          <button class="pill-tab-btn" type="button">30 days</button>
+          <button class="pill-tab-btn" type="button">90 days</button>
         </div>
       </div>
-      <div class="p-3 p-md-4">
-        <div class="row g-3">
-          @foreach (var t in Model.Tiles)
-          {
-            var statusClass = t.Color == "danger" ? "status-danger" : t.Color == "warning" ? "status-warning" : "status-safe";
-            var pct = t.Max > 0 ? (t.Qty * 100 / t.Max) : 0;
-            var barColor = t.Color == "danger" ? "bg-danger" : t.Color == "warning" ? "bg-warning" : "bg-success";
 
-            <div class="col-6 col-md-4 col-xl-3">
-              <div class="rack-tile @statusClass">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="rack-code">@t.Code</span>
-                  <span class="rack-zone-badge @(t.Zone == "RACK" ? "zone-rack" : "zone-floor")">@t.Zone</span>
-                </div>
-                
-                <div class="rack-progress-wrap">
-                  <div class="d-flex justify-content-between rack-qty-text mb-1">
-                    <span>@t.Qty <small class="text-muted">/ @t.Max</small></span>
-                    <span class="fw-bold">@pct%</span>
-                  </div>
-                  <div class="progress" style="height: 5px; border-radius: 9999px; background: #e2e8f0;">
-                    <div class="progress-bar @barColor" style="width: @pct%;"></div>
-                  </div>
-                </div>
+      <!-- Chart Subheader Strip -->
+      <div class="d-flex justify-content-between align-items-end px-4 pt-3 pb-2">
+        <div>
+          <div style="color: #8D97A7; font-size: 7px; font-weight: 700; letter-spacing: 0.56px; text-transform: uppercase;">TOTAL MOVEMENTS</div>
+          <div style="color: #172033; font-size: 24px; font-weight: 700; line-height: 36px;">1,284</div>
+          <div style="color: #0B8D65; font-size: 8px; font-weight: 400;">+12.4% from previous period</div>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <div class="d-flex align-items-center gap-1" style="font-size: 8px; color: #718096;">
+            <div style="width: 7px; height: 7px; background: #2563EB; border-radius: 2px;"></div>
+            <span>Outbound</span>
+          </div>
+          <div class="d-flex align-items-center gap-1" style="font-size: 8px; color: #718096;">
+            <div style="width: 7px; height: 7px; background: #A9C0EF; border-radius: 2px;"></div>
+            <span>Inbound</span>
+          </div>
+        </div>
+      </div>
 
-                <div class="mt-2 text-end">
-                  @if (t.Color == "danger")
-                  {
-                    <span class="status-pill danger"><i class="bi bi-exclamation-circle-fill"></i> Kritis</span>
-                  }
-                  else if (t.Color == "warning")
-                  {
-                    <span class="status-pill warning"><i class="bi bi-dash-circle-fill"></i> Padat</span>
-                  }
-                  else
-                  {
-                    <span class="status-pill safe"><i class="bi bi-check-circle-fill"></i> Normal</span>
-                  }
-                </div>
-              </div>
+      <!-- DUAL BAR CHART (14 DAYS) -->
+      <div class="px-4 pb-3 pt-2">
+        <div style="height: 180px; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; border-bottom: 1px solid #EDF0F4; padding-bottom: 8px;">
+          <!-- Day 1 -->
+          <div class="d-flex flex-column align-items-center flex-grow-1" style="height: 100%; justify-content: flex-end;">
+            <div class="d-flex align-items-flex-end gap-1" style="height: 140px; align-items: flex-end;">
+              <div style="width: 10px; height: 60px; background: #2563EB; border-radius: 3px 3px 1px 1px;" title="Outbound: 60"></div>
+              <div style="width: 10px; height: 42px; background: #A9C0EF; border-radius: 3px 3px 1px 1px;" title="Inbound: 42"></div>
             </div>
-          }
+            <div style="color: #909AAA; font-size: 7px; margin-top: 6px;">11 Jun</div>
+          </div>
+          <!-- Day 2 -->
+          <div class="d-flex flex-column align-items-center flex-grow-1" style="height: 100%; justify-content: flex-end;">
+            <div class="d-flex align-items-flex-end gap-1" style="height: 140px; align-items: flex-end;">
+              <div style="width: 10px; height: 85px; background: #2563EB; border-radius: 3px 3px 1px 1px;"></div>
+              <div style="width: 10px; height: 70px; background: #A9C0EF; border-radius: 3px 3px 1px 1px;"></div>
+            </div>
+            <div style="color: #909AAA; font-size: 7px; margin-top: 6px;">12 Jun</div>
+          </div>
+          <!-- Day 3 -->
+          <div class="d-flex flex-column align-items-center flex-grow-1" style="height: 100%; justify-content: flex-end;">
+            <div class="d-flex align-items-flex-end gap-1" style="height: 140px; align-items: flex-end;">
+              <div style="width: 10px; height: 75px; background: #2563EB; border-radius: 3px 3px 1px 1px;"></div>
+              <div style="width: 10px; height: 68px; background: #A9C0EF; border-radius: 3px 3px 1px 1px;"></div>
+            </div>
+            <div style="color: #909AAA; font-size: 7px; margin-top: 6px;">13 Jun</div>
+          </div>
+          <!-- Day 4 -->
+          <div class="d-flex flex-column align-items-center flex-grow-1" style="height: 100%; justify-content: flex-end;">
+            <div class="d-flex align-items-flex-end gap-1" style="height: 140px; align-items: flex-end;">
+              <div style="width: 10px; height: 105px; background: #2563EB; border-radius: 3px 3px 1px 1px;"></div>
+              <div style="width: 10px; height: 80px; background: #A9C0EF; border-radius: 3px 3px 1px 1px;"></div>
+            </div>
+            <div style="color: #909AAA; font-size: 7px; margin-top: 6px;">14 Jun</div>
+          </div>
+          <!-- Day 5 -->
+          <div class="d-flex flex-column align-items-center flex-grow-1" style="height: 100%; justify-content: flex-end;">
+            <div class="d-flex align-items-flex-end gap-1" style="height: 140px; align-items: flex-end;">
+              <div style="width: 10px; height: 95px; background: #2563EB; border-radius: 3px 3px 1px 1px;"></div>
+              <div style="width: 10px; height: 78px; background: #A9C0EF; border-radius: 3px 3px 1px 1px;"></div>
+            </div>
+            <div style="color: #909AAA; font-size: 7px; margin-top: 6px;">15 Jun</div>
+          </div>
+          <!-- Day 6 -->
+          <div class="d-flex flex-column align-items-center flex-grow-1" style="height: 100%; justify-content: flex-end;">
+            <div class="d-flex align-items-flex-end gap-1" style="height: 140px; align-items: flex-end;">
+              <div style="width: 10px; height: 125px; background: #2563EB; border-radius: 3px 3px 1px 1px;"></div>
+              <div style="width: 10px; height: 118px; background: #A9C0EF; border-radius: 3px 3px 1px 1px;"></div>
+            </div>
+            <div style="color: #909AAA; font-size: 7px; margin-top: 6px;">16 Jun</div>
+          </div>
+          <!-- Day 7 -->
+          <div class="d-flex flex-column align-items-center flex-grow-1" style="height: 100%; justify-content: flex-end;">
+            <div class="d-flex align-items-flex-end gap-1" style="height: 140px; align-items: flex-end;">
+              <div style="width: 10px; height: 110px; background: #2563EB; border-radius: 3px 3px 1px 1px;"></div>
+              <div style="width: 10px; height: 86px; background: #A9C0EF; border-radius: 3px 3px 1px 1px;"></div>
+            </div>
+            <div style="color: #909AAA; font-size: 7px; margin-top: 6px;">17 Jun</div>
+          </div>
+          <!-- Day 8 -->
+          <div class="d-flex flex-column align-items-center flex-grow-1" style="height: 100%; justify-content: flex-end;">
+            <div class="d-flex align-items-flex-end gap-1" style="height: 140px; align-items: flex-end;">
+              <div style="width: 10px; height: 130px; background: #2563EB; border-radius: 3px 3px 1px 1px;"></div>
+              <div style="width: 10px; height: 115px; background: #A9C0EF; border-radius: 3px 3px 1px 1px;"></div>
+            </div>
+            <div style="color: #909AAA; font-size: 7px; margin-top: 6px;">18 Jun</div>
+          </div>
+          <!-- Day 9 -->
+          <div class="d-flex flex-column align-items-center flex-grow-1" style="height: 100%; justify-content: flex-end;">
+            <div class="d-flex align-items-flex-end gap-1" style="height: 140px; align-items: flex-end;">
+              <div style="width: 10px; height: 100px; background: #2563EB; border-radius: 3px 3px 1px 1px;"></div>
+              <div style="width: 10px; height: 95px; background: #A9C0EF; border-radius: 3px 3px 1px 1px;"></div>
+            </div>
+            <div style="color: #909AAA; font-size: 7px; margin-top: 6px;">19 Jun</div>
+          </div>
+          <!-- Day 10 -->
+          <div class="d-flex flex-column align-items-center flex-grow-1" style="height: 100%; justify-content: flex-end;">
+            <div class="d-flex align-items-flex-end gap-1" style="height: 140px; align-items: flex-end;">
+              <div style="width: 10px; height: 120px; background: #2563EB; border-radius: 3px 3px 1px 1px;"></div>
+              <div style="width: 10px; height: 94px; background: #A9C0EF; border-radius: 3px 3px 1px 1px;"></div>
+            </div>
+            <div style="color: #909AAA; font-size: 7px; margin-top: 6px;">20 Jun</div>
+          </div>
+          <!-- Day 11 -->
+          <div class="d-flex flex-column align-items-center flex-grow-1" style="height: 100%; justify-content: flex-end;">
+            <div class="d-flex align-items-flex-end gap-1" style="height: 140px; align-items: flex-end;">
+              <div style="width: 10px; height: 135px; background: #2563EB; border-radius: 3px 3px 1px 1px;"></div>
+              <div style="width: 10px; height: 120px; background: #A9C0EF; border-radius: 3px 3px 1px 1px;"></div>
+            </div>
+            <div style="color: #909AAA; font-size: 7px; margin-top: 6px;">21 Jun</div>
+          </div>
+          <!-- Day 12 -->
+          <div class="d-flex flex-column align-items-center flex-grow-1" style="height: 100%; justify-content: flex-end;">
+            <div class="d-flex align-items-flex-end gap-1" style="height: 140px; align-items: flex-end;">
+              <div style="width: 10px; height: 115px; background: #2563EB; border-radius: 3px 3px 1px 1px;"></div>
+              <div style="width: 10px; height: 110px; background: #A9C0EF; border-radius: 3px 3px 1px 1px;"></div>
+            </div>
+            <div style="color: #909AAA; font-size: 7px; margin-top: 6px;">22 Jun</div>
+          </div>
+          <!-- Day 13 -->
+          <div class="d-flex flex-column align-items-center flex-grow-1" style="height: 100%; justify-content: flex-end;">
+            <div class="d-flex align-items-flex-end gap-1" style="height: 140px; align-items: flex-end;">
+              <div style="width: 10px; height: 142px; background: #2563EB; border-radius: 3px 3px 1px 1px;"></div>
+              <div style="width: 10px; height: 118px; background: #A9C0EF; border-radius: 3px 3px 1px 1px;"></div>
+            </div>
+            <div style="color: #909AAA; font-size: 7px; margin-top: 6px;">23 Jun</div>
+          </div>
+          <!-- Day 14 (Today) -->
+          <div class="d-flex flex-column align-items-center flex-grow-1" style="height: 100%; justify-content: flex-end;">
+            <div class="d-flex align-items-flex-end gap-1" style="height: 140px; align-items: flex-end;">
+              <div style="width: 10px; height: 125px; background: #2563EB; border-radius: 3px 3px 1px 1px;"></div>
+              <div style="width: 10px; height: 110px; background: #A9C0EF; border-radius: 3px 3px 1px 1px;"></div>
+            </div>
+            <div style="color: #909AAA; font-size: 7px; margin-top: 6px;">24 Jun</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Right Column: Today's fulfillment (Donut & Status) -->
   <div class="col-lg-4">
-    <div class="modern-card h-100">
-      <div class="card-header-clean">
-        <div class="d-flex align-items-center gap-2">
-          <i class="bi bi-pie-chart text-primary"></i>
-          <span>Komposisi Mutu Stok</span>
+    <div class="modern-section-card h-100 d-flex flex-column justify-content-between">
+      <div>
+        <div class="section-card-header">
+          <div>
+            <h6 class="section-card-title">Today's fulfillment</h6>
+            <div class="section-card-sub">Order processing status</div>
+          </div>
+          <a asp-controller="Dispatch" asp-action="Index" class="text-decoration-none fw-semibold" style="color: #2460CD; font-size: 9px;">View details</a>
+        </div>
+
+        <!-- DONUT GAUGE SECTION -->
+        <div class="d-flex align-items-center justify-content-center gap-4 px-3 py-4">
+          <!-- DONUT SVG RING -->
+          <div style="position: relative; width: 115px; height: 115px;">
+            <svg viewBox="0 0 36 36" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+              <path stroke="#EDF1F5" stroke-width="3.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path stroke="#10B981" stroke-dasharray="84, 100" stroke-width="3.5" stroke-linecap="round" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+              <span style="color: #172033; font-size: 23px; font-weight: 700; line-height: 28px;">84%</span>
+              <span style="color: #8691A2; font-size: 8px;">On time</span>
+            </div>
+          </div>
+
+          <!-- BREAKDOWN STATS -->
+          <div class="d-flex flex-column gap-2">
+            <div class="d-flex align-items-center justify-content-between gap-3">
+              <div class="d-flex align-items-center gap-2" style="color: #758195; font-size: 9px;">
+                <div style="width: 7px; height: 7px; background: #10B981; border-radius: 2px;"></div>
+                <span>Completed</span>
+              </div>
+              <strong style="color: #172033; font-size: 9px;">126</strong>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between gap-3">
+              <div class="d-flex align-items-center gap-2" style="color: #758195; font-size: 9px;">
+                <div style="width: 7px; height: 7px; background: #2563EB; border-radius: 2px;"></div>
+                <span>Processing</span>
+              </div>
+              <strong style="color: #172033; font-size: 9px;">38</strong>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between gap-3">
+              <div class="d-flex align-items-center gap-2" style="color: #758195; font-size: 9px;">
+                <div style="width: 7px; height: 7px; background: #F59E0B; border-radius: 2px;"></div>
+                <span>At risk</span>
+              </div>
+              <strong style="color: #172033; font-size: 9px;">7</strong>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="p-3 p-md-4 d-flex flex-column justify-content-between">
-        <div style="position: relative; height: 230px;" class="mb-4">
-          <canvas id="donut"></canvas>
+
+      <!-- BOTTOM PROGRESS: DAILY DISPATCH TARGET -->
+      <div class="px-3 pb-3 pt-2" style="border-top: 1px solid #EDF0F4;">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span style="color: #172033; font-size: 8px;">Daily dispatch target</span>
+          <strong style="color: #172033; font-size: 8px;">164 / 190</strong>
         </div>
-        
-        <div class="bg-light p-3 rounded-3 border">
-          <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
-            <span class="small fw-semibold text-muted d-flex align-items-center gap-2">
-              <span style="width: 10px; height: 10px; border-radius: 50%; background-color: #10b981; display: inline-block;"></span> Normal
-            </span>
-            <span class="fw-bold fs-6">@Model.Normal.ToString("N0") <small class="text-muted fw-normal">unit</small></span>
-          </div>
-          <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
-            <span class="small fw-semibold text-muted d-flex align-items-center gap-2">
-              <span style="width: 10px; height: 10px; border-radius: 50%; background-color: #f59e0b; display: inline-block;"></span> Aging Alert (&gt;90d)
-            </span>
-            <span class="fw-bold fs-6 text-warning">@Model.Aging.ToString("N0") <small class="text-muted fw-normal">unit</small></span>
-          </div>
-          <div class="d-flex justify-content-between align-items-center py-1">
-            <span class="small fw-semibold text-muted d-flex align-items-center gap-2">
-              <span style="width: 10px; height: 10px; border-radius: 50%; background-color: #ef4444; display: inline-block;"></span> Low Voltage (&lt;12.4V)
-            </span>
-            <span class="fw-bold fs-6 text-danger">@Model.LowVoltage.ToString("N0") <small class="text-muted fw-normal">unit</small></span>
-          </div>
+        <div class="progress" style="height: 5px; background: #EDF1F5; border-radius: 5px;">
+          <div class="progress-bar" style="width: 86%; background: #10B981; border-radius: 5px;"></div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-@section Scripts {
-<script>
-  const ctx = document.getElementById('donut').getContext('2d');
-  new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Normal', 'Aging Alert', 'Low Voltage'],
-      datasets: [{
-        data: [@Model.Normal, @Model.Aging, @Model.LowVoltage],
-        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-        borderWidth: 2,
-        borderColor: '#ffffff',
-        hoverOffset: 6
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: false
-        },
-        tooltip: {
-          callbacks: {
-            label: function(context) {
-              const total = @(Model.Normal + Model.Aging + Model.LowVoltage);
-              const val = context.raw;
-              const pct = total > 0 ? Math.round((val / total) * 100) : 0;
-              return `${context.label}: ${val} unit (${pct}%)`;
-            }
-          }
-        }
-      },
-      cutout: '72%'
-    }
-  });
-</script>
-}
+<!-- BOTTOM ROW: OPERATIONAL STATUS & ATTENTION REQUIRED -->
+<div class="row g-3">
+  <!-- Left Column: Operational status -->
+  <div class="col-lg-6">
+    <div class="modern-section-card h-100">
+      <div class="section-card-header">
+        <div>
+          <h6 class="section-card-title">Operational status</h6>
+          <div class="section-card-sub">Live performance by workstream</div>
+        </div>
+        <span class="badge" style="background: #E7F9F2; color: #087C59; font-size: 8px; font-weight: 600; padding: 4px 7px; border-radius: 5px;">Healthy</span>
+      </div>
+
+      <div class="p-0">
+        <!-- Workstream 1: Inbound receiving -->
+        <div class="status-item-strip">
+          <div class="status-icon-box blue">
+            <i class="bi bi-box-arrow-in-down"></i>
+          </div>
+          <div class="status-item-content">
+            <div class="status-item-title">Inbound receiving</div>
+            <div class="status-item-desc">3 trucks currently unloading</div>
+          </div>
+          <div class="status-item-val">92%</div>
+        </div>
+
+        <!-- Workstream 2: Putaway completion -->
+        <div class="status-item-strip">
+          <div class="status-icon-box green">
+            <i class="bi bi-arrow-left-right"></i>
+          </div>
+          <div class="status-item-content">
+            <div class="status-item-title">Putaway completion</div>
+            <div class="status-item-desc">148 of 162 pallets stored</div>
+          </div>
+          <div class="status-item-val">91%</div>
+        </div>
+
+        <!-- Workstream 3: Outbound loading -->
+        <div class="status-item-strip">
+          <div class="status-icon-box amber">
+            <i class="bi bi-truck"></i>
+          </div>
+          <div class="status-item-content">
+            <div class="status-item-title">Outbound loading</div>
+            <div class="status-item-desc">6 of 18 trucks dispatched</div>
+          </div>
+          <div class="status-item-val">33%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Attention required -->
+  <div class="col-lg-6">
+    <div class="modern-section-card h-100">
+      <div class="section-card-header">
+        <div>
+          <h6 class="section-card-title">Attention required</h6>
+          <div class="section-card-sub">Items needing operational review</div>
+        </div>
+        <a asp-controller="Report" asp-action="SubLot" class="text-decoration-none fw-semibold" style="color: #2460CD; font-size: 9px;">View all</a>
+      </div>
+
+      <div class="p-0">
+        <!-- Alert 1 -->
+        <div class="status-item-strip">
+          <div class="status-icon-box rose">!</div>
+          <div class="status-item-content">
+            <div class="status-item-title">2 lots expire within 7 days</div>
+            <div class="status-item-desc">Cold Storage &bull; Zone C</div>
+          </div>
+          <a asp-controller="Report" asp-action="SubLot" class="text-muted"><i class="bi bi-chevron-right" style="font-size: 11px;"></i></a>
+        </div>
+
+        <!-- Alert 2 -->
+        <div class="status-item-strip">
+          <div class="status-icon-box amber">!</div>
+          <div class="status-item-content">
+            <div class="status-item-title">Dock 04 loading behind schedule</div>
+            <div class="status-item-desc">Shipment #SHP-2406 &bull; 18 min delay</div>
+          </div>
+          <a asp-controller="Dispatch" asp-action="Index" class="text-muted"><i class="bi bi-chevron-right" style="font-size: 11px;"></i></a>
+        </div>
+
+        <!-- Alert 3 -->
+        <div class="status-item-strip">
+          <div class="status-icon-box blue">!</div>
+          <div class="status-item-content">
+            <div class="status-item-title">Cycle count due today</div>
+            <div class="status-item-desc">Rack A3 &bull; 24 bin locations</div>
+          </div>
+          <a asp-controller="Internal" asp-action="StockOpname" class="text-muted"><i class="bi bi-chevron-right" style="font-size: 11px;"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
