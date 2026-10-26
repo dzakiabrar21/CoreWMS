@@ -1,0 +1,330 @@
+@model DashboardVm
+@{
+  ViewData["Title"] = "Rack & Bin Inventory";
+}
+
+<!-- HEADER ROW -->
+<div class="page-header-row">
+  <div>
+    <div class="header-category">STORAGE OPERATIONS</div>
+    <h1 class="header-title">Rack &amp; bin inventory</h1>
+    <div class="header-subtitle">Monitor capacity and locate stock across all warehouse zones.</div>
+  </div>
+  <div class="live-indicator-pill">
+    <span class="live-pulse-dot"></span>
+    <span>Live data &bull; Updated just now</span>
+  </div>
+</div>
+
+<!-- 4 METRIC CARDS -->
+<div class="metrics-row">
+  <!-- Card 1: Total Capacity -->
+  <div class="metric-card-box">
+    <div class="metric-card-top">
+      <span class="metric-card-title">Total Capacity</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted" style="font-size: 11px;">&bull;&bull;&bull;</span>
+        <div class="metric-icon-square blue">
+          <i class="bi bi-box-seam"></i>
+        </div>
+      </div>
+    </div>
+    <div class="metric-value-large">
+      @(Model.TotalCapacity > 0 ? Model.TotalCapacity.ToString("N0") : "1,200") 
+      <span class="metric-unit-tag">bins</span>
+    </div>
+    <div class="metric-trend-text green">+48 this month</div>
+  </div>
+
+  <!-- Card 2: Occupancy Rate -->
+  <div class="metric-card-box">
+    <div class="metric-card-top">
+      <span class="metric-card-title">Occupancy Rate</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted" style="font-size: 11px;">&bull;&bull;&bull;</span>
+        <div class="metric-icon-square green">
+          <i class="bi bi-bar-chart-line"></i>
+        </div>
+      </div>
+    </div>
+    <div class="metric-value-large">
+      @(Model.OccupancyPct > 0 ? Model.OccupancyPct.ToString("N1") : "74.2") 
+      <span class="metric-unit-tag">%</span>
+    </div>
+    <div class="metric-mini-progress">
+      <div class="metric-mini-progress-fill" style="width: @(Model.OccupancyPct > 0 ? Model.OccupancyPct : 74.2)%;"></div>
+    </div>
+    <div class="metric-trend-text green">+2.4% vs last week</div>
+  </div>
+
+  <!-- Card 3: Shipments Today -->
+  <div class="metric-card-box">
+    <div class="metric-card-top">
+      <span class="metric-card-title">Shipments Today</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted" style="font-size: 11px;">&bull;&bull;&bull;</span>
+        <div class="metric-icon-square amber">
+          <i class="bi bi-truck"></i>
+        </div>
+      </div>
+    </div>
+    <div class="metric-value-large">
+      @(Model.TodayDoCount > 0 ? Model.TodayDoCount : 18) 
+      <span class="metric-unit-tag">trucks</span>
+    </div>
+    <div class="metric-trend-text green">6 awaiting pickup</div>
+  </div>
+
+  <!-- Card 4: Critical Alerts -->
+  <div class="metric-card-box">
+    <div class="metric-card-top">
+      <span class="metric-card-title">Critical Alerts</span>
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted" style="font-size: 11px;">&bull;&bull;&bull;</span>
+        <div class="metric-icon-square rose">
+          <i class="bi bi-bell"></i>
+        </div>
+      </div>
+    </div>
+    <div class="metric-value-large">
+      @(Model.AgingCount > 0 ? Model.AgingCount : 2) 
+      <span class="metric-unit-tag">lots</span>
+    </div>
+    <div class="metric-trend-text rose">Expiring within 7 days</div>
+  </div>
+</div>
+
+<!-- MAIN RACK MAP & RIGHT PANELS -->
+<div class="row g-3">
+  <!-- Left Column: Warehouse rack occupancy (Figma Image 2) -->
+  <div class="col-lg-8">
+    <div class="modern-section-card">
+      <div class="section-card-header">
+        <div>
+          <h6 class="section-card-title">Warehouse rack occupancy</h6>
+          <div class="section-card-sub">Central Jakarta &bull; Ground floor</div>
+        </div>
+        <div class="pill-tab-group" id="zoneFilterPills">
+          <button class="pill-tab-btn active" type="button" onclick="filterZone('all', this)">All zones</button>
+          <button class="pill-tab-btn" type="button" onclick="filterZone('A', this)">Zone A</button>
+          <button class="pill-tab-btn" type="button" onclick="filterZone('B', this)">Zone B</button>
+          <button class="pill-tab-btn" type="button" onclick="filterZone('C', this)">Zone C</button>
+        </div>
+      </div>
+
+      <!-- LEGEND STRIP -->
+      <div class="rack-legend-strip">
+        <div class="legend-item">
+          <span class="legend-dot empty"></span>
+          <span>Empty</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot available"></span>
+          <span>Available</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot near-capacity"></span>
+          <span>Near capacity</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot quarantine"></span>
+          <span>Full / Quarantine</span>
+        </div>
+      </div>
+
+      <!-- 12 RACKS GRID -->
+      <div class="racks-grid-container">
+        @* Helper arrays to generate 12 racks A1..A4, B1..B4, C1..C4 matching Figma *@
+        @{
+          var racks = new[] {
+            new { Name = "RACK A1", Zone = "A", Occupied = "5/6", Bins = new[] { ("A-01-1", "55%", "available"), ("A-01-2", "61%", "available"), ("A-01-3", "EMPTY", "empty"), ("A-01-4", "73%", "near-capacity"), ("A-01-5", "79%", "available"), ("A-01-6", "HOLD", "hold") } },
+            new { Name = "RACK A2", Zone = "A", Occupied = "5/6", Bins = new[] { ("A-02-1", "55%", "available"), ("A-02-2", "EMPTY", "empty"), ("A-02-3", "67%", "available"), ("A-02-4", "73%", "available"), ("A-02-5", "79%", "near-capacity"), ("A-02-6", "85%", "available") } },
+            new { Name = "RACK A3", Zone = "A", Occupied = "5/6", Bins = new[] { ("A-03-1", "HOLD", "hold"), ("A-03-2", "61%", "available"), ("A-03-3", "67%", "available"), ("A-03-4", "EMPTY", "empty"), ("A-03-5", "79%", "available"), ("A-03-6", "85%", "near-capacity") } },
+            new { Name = "RACK A4", Zone = "A", Occupied = "5/6", Bins = new[] { ("A-04-1", "55%", "available"), ("A-04-2", "61%", "available"), ("A-04-3", "67%", "near-capacity"), ("A-04-4", "73%", "available"), ("A-04-5", "79%", "available"), ("A-04-6", "EMPTY", "empty") } },
+
+            new { Name = "RACK B1", Zone = "B", Occupied = "5/6", Bins = new[] { ("B-01-1", "55%", "available"), ("B-01-2", "61%", "available"), ("B-01-3", "67%", "available"), ("B-01-4", "73%", "near-capacity"), ("B-01-5", "EMPTY", "empty"), ("B-01-6", "85%", "available") } },
+            new { Name = "RACK B2", Zone = "B", Occupied = "6/6", Bins = new[] { ("B-02-1", "55%", "near-capacity"), ("B-02-2", "HOLD", "hold"), ("B-02-3", "67%", "available"), ("B-02-4", "73%", "available"), ("B-02-5", "79%", "near-capacity"), ("B-02-6", "85%", "available") } },
+            new { Name = "RACK B3", Zone = "B", Occupied = "5/6", Bins = new[] { ("B-03-1", "55%", "available"), ("B-03-2", "61%", "available"), ("B-03-3", "EMPTY", "empty"), ("B-03-4", "73%", "available"), ("B-03-5", "79%", "available"), ("B-03-6", "85%", "near-capacity") } },
+            new { Name = "RACK B4", Zone = "B", Occupied = "6/6", Bins = new[] { ("B-04-1", "55%", "available"), ("B-04-2", "61%", "near-capacity"), ("B-04-3", "67%", "available"), ("B-04-4", "HOLD", "hold"), ("B-04-5", "79%", "available"), ("B-04-6", "85%", "available") } },
+
+            new { Name = "RACK C1", Zone = "C", Occupied = "5/6", Bins = new[] { ("C-01-1", "EMPTY", "empty"), ("C-01-2", "61%", "available"), ("C-01-3", "67%", "available"), ("C-01-4", "73%", "available"), ("C-01-5", "79%", "near-capacity"), ("C-01-6", "85%", "available") } },
+            new { Name = "RACK C2", Zone = "C", Occupied = "6/6", Bins = new[] { ("C-02-1", "55%", "available"), ("C-02-2", "61%", "available"), ("C-02-3", "67%", "near-capacity"), ("C-02-4", "73%", "available"), ("C-02-5", "HOLD", "hold"), ("C-02-6", "85%", "near-capacity") } },
+            new { Name = "RACK C3", Zone = "C", Occupied = "5/6", Bins = new[] { ("C-03-1", "55%", "available"), ("C-03-2", "EMPTY", "empty"), ("C-03-3", "67%", "available"), ("C-03-4", "73%", "available"), ("C-03-5", "79%", "available"), ("C-03-6", "95%", "near-capacity") } },
+            new { Name = "RACK C4", Zone = "C", Occupied = "6/6", Bins = new[] { ("C-04-1", "55%", "near-capacity"), ("C-04-2", "61%", "available"), ("C-04-3", "67%", "available"), ("C-04-4", "HOLD", "hold"), ("C-04-5", "79%", "available"), ("C-04-6", "65%", "available") } }
+          };
+        }
+
+        @foreach (var r in racks)
+        {
+          <div class="rack-card-box rack-zone-item" data-zone="@r.Zone">
+            <div class="rack-card-header">
+              <span class="rack-card-title">@r.Name</span>
+              <span class="rack-card-occupied">@r.Occupied occupied</span>
+            </div>
+            <div class="bin-slots-list">
+              @foreach (var b in r.Bins)
+              {
+                <a asp-controller="Internal" asp-action="Transfer" class="bin-slot-pill @b.Item3 text-decoration-none" title="Bin @b.Item1: @b.Item2">
+                  <div class="bin-code-label">@b.Item1</div>
+                  <div class="bin-pct-label">@b.Item2</div>
+                </a>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- FOOTER NOTE & MAP LINK -->
+      <div class="d-flex justify-content-between align-items-center px-4 py-3" style="border-top: 1px solid #EDF0F4;">
+        <span class="small text-muted" style="font-size: 9px;">
+          <span style="color: #F59E0B; font-weight: bold;">&bull;&bull;&bull;&bull;</span> Emergency aisle &bull; Keep clear
+        </span>
+        <a asp-controller="Master" asp-action="Locations" class="text-decoration-none fw-semibold d-flex align-items-center gap-1" style="color: #2460CD; font-size: 10px;">
+          <span>View full warehouse map</span>
+          <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Recent movements & Dispatch queue -->
+  <div class="col-lg-4">
+    <!-- RECENT MOVEMENTS CARD -->
+    <div class="modern-section-card mb-3">
+      <div class="section-card-header">
+        <div>
+          <h6 class="section-card-title">Recent movements</h6>
+          <div class="section-card-sub">Live inventory activity</div>
+        </div>
+        <a asp-controller="Master" asp-action="AuditTrail" class="text-decoration-none fw-semibold" style="color: #2460CD; font-size: 9px;">View all</a>
+      </div>
+
+      <div class="p-0">
+        <!-- Item 1: Inbound received -->
+        <div class="status-item-strip">
+          <div class="status-icon-box green">
+            <i class="bi bi-box-arrow-in-down"></i>
+          </div>
+          <div class="status-item-content">
+            <div class="status-item-title">Inbound received</div>
+            <div class="status-item-desc">BAT-CBI-60AH &bull; Dock 03 &rarr; A-01-2</div>
+          </div>
+          <div style="color: #8A96A8; font-size: 9px;">2m</div>
+        </div>
+
+        <!-- Item 2: Bin transfer -->
+        <div class="status-item-strip">
+          <div class="status-icon-box blue">
+            <i class="bi bi-arrow-left-right"></i>
+          </div>
+          <div class="status-item-content">
+            <div class="status-item-title">Bin transfer</div>
+            <div class="status-item-desc">PCK-FLM-200 &bull; B-03-1 &rarr; C-02-4</div>
+          </div>
+          <div style="color: #8A96A8; font-size: 9px;">8m</div>
+        </div>
+
+        <!-- Item 3: Outbound picked -->
+        <div class="status-item-strip">
+          <div class="status-icon-box amber">
+            <i class="bi bi-box-arrow-up-right"></i>
+          </div>
+          <div class="status-item-content">
+            <div class="status-item-title">Outbound picked</div>
+            <div class="status-item-desc">BRG-STD-M12 &bull; A-04-3 &rarr; Dispatch</div>
+          </div>
+          <div style="color: #8A96A8; font-size: 9px;">14m</div>
+        </div>
+
+        <!-- Item 4: Quality hold -->
+        <div class="status-item-strip">
+          <div class="status-icon-box rose">
+            <i class="bi bi-shield-exclamation"></i>
+          </div>
+          <div class="status-item-content">
+            <div class="status-item-title">Quality hold</div>
+            <div class="status-item-desc">OIL-HYD-46 &bull; Rack C-04</div>
+          </div>
+          <div style="color: #8A96A8; font-size: 9px;">22m</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DISPATCH QUEUE CARD -->
+    <div class="modern-section-card">
+      <div class="section-card-header">
+        <div>
+          <h6 class="section-card-title">Dispatch queue</h6>
+          <div class="section-card-sub">Next trucks to load</div>
+        </div>
+        <span class="badge" style="background: #EBF8F2; color: #047857; font-size: 8px; font-weight: 600; padding: 4px 7px; border-radius: 5px;">3 active</span>
+      </div>
+
+      <div class="p-0">
+        <!-- Truck 1 -->
+        <div class="status-item-strip">
+          <div style="font-size: 9px; font-weight: 700; color: #586579; min-width: 45px;">
+            08:30 <span style="font-size: 7px; color: #8A96A8; display: block;">WIB</span>
+          </div>
+          <div class="status-item-content">
+            <div class="status-item-title">B 9123 KLA</div>
+            <div class="status-item-desc">DHL Express &bull; Dock 02</div>
+          </div>
+          <span class="badge" style="background: #DFF7EE; color: #127457; font-size: 8px; font-weight: 600; padding: 3px 6px; border-radius: 4px;">Ready</span>
+        </div>
+
+        <!-- Truck 2 -->
+        <div class="status-item-strip">
+          <div style="font-size: 9px; font-weight: 700; color: #586579; min-width: 45px;">
+            09:15 <span style="font-size: 7px; color: #8A96A8; display: block;">WIB</span>
+          </div>
+          <div class="status-item-content">
+            <div class="status-item-title">B 7710 UX</div>
+            <div class="status-item-desc">JNE Logistics &bull; Dock 04</div>
+          </div>
+          <span class="badge" style="background: #EDF3FF; color: #2563EB; font-size: 8px; font-weight: 600; padding: 3px 6px; border-radius: 4px;">Loading</span>
+        </div>
+
+        <!-- Truck 3 -->
+        <div class="status-item-strip">
+          <div style="font-size: 9px; font-weight: 700; color: #586579; min-width: 45px;">
+            10:00 <span style="font-size: 7px; color: #8A96A8; display: block;">WIB</span>
+          </div>
+          <div class="status-item-content">
+            <div class="status-item-title">D 8821 AB</div>
+            <div class="status-item-desc">RPX Freight &bull; Dock 01</div>
+          </div>
+          <span class="badge" style="background: #FFF6E5; color: #D97706; font-size: 8px; font-weight: 600; padding: 3px 6px; border-radius: 4px;">Waiting</span>
+        </div>
+      </div>
+
+      <div class="p-3 text-center" style="border-top: 1px solid #EDF0F4;">
+        <a asp-controller="Dispatch" asp-action="Index" class="text-decoration-none fw-semibold d-inline-flex align-items-center gap-1" style="color: #2460CD; font-size: 10px;">
+          <span>Manage dispatch queue</span>
+          <i class="bi bi-chevron-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+  function filterZone(zone, btn) {
+    // Toggle active pill button
+    const container = document.getElementById('zoneFilterPills');
+    container.querySelectorAll('.pill-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Filter cards
+    const cards = document.querySelectorAll('.rack-zone-item');
+    cards.forEach(card => {
+      if (zone === 'all' || card.getAttribute('data-zone') === zone) {
+        card.style.display = 'flex';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+</script>
+}

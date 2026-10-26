@@ -13,10 +13,13 @@ public class HomeController : Controller
     public HomeController(IInventoryService inv) => _inv = inv;
 
     [HttpGet]
-    public IActionResult Index() => View(); // Splash Portal Screen
+    public async Task<IActionResult> Index() => View("Dashboard", await _inv.GetDashboardAsync());
 
     [HttpGet("Dashboard")]
     public async Task<IActionResult> Dashboard() => View(await _inv.GetDashboardAsync());
+
+    [HttpGet("RackInventory")]
+    public async Task<IActionResult> RackInventory() => View(await _inv.GetDashboardAsync());
 }
 
 public class StoringController : Controller
