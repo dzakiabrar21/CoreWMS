@@ -1,54 +1,171 @@
 @model DeliveryCreateVm
-@{ ViewData["Title"] = "Buat Rencana Kirim"; }
-<h3 class="mb-3">Buat Rencana Kirim</h3>
-<form asp-action="Create" method="post" class="card shadow-sm"><div class="card-body">
-  <div asp-validation-summary="All" class="alert alert-danger py-2 @(ViewData.ModelState.IsValid ? "d-none" : "")"></div>
-  <div class="row g-3">
-    <div class="col-md-4"><label class="form-label">Pelanggan</label><input asp-for="CustomerName" class="form-control" list="cust" required />
-      <datalist id="cust"><option value="Astra Otoparts"/><option value="PDC Karawang"/></datalist></div>
-    <div class="col-md-4"><label class="form-label">Tanggal Muat</label><input asp-for="DeliveryDate" type="date" class="form-control" required /></div>
-    <div class="col-md-4"><label class="form-label">Ritase</label>
-      <select asp-for="Ritase" class="form-select">
-        @foreach (var r in Ritases.All) { <option value="@r">@r (terisi @Model.RitaseLoad[r]/@IDispatchService.MaxDoPerRitase)</option> }
-      </select></div>
+@{
+  ViewData["Title"] = "Buat Rencana Pengiriman";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+  <div>
+    <h3 class="fw-bold mb-1" style="letter-spacing: -0.03em;">Buat Rencana Kirim (Delivery Order)</h3>
+    <p class="text-muted mb-0 small"><i class="bi bi-file-earmark-plus me-1"></i> Penjadwalan Muat Barang Berbasis Ritase Heijunka &amp; Rekomendasi FIFO Otomatis</p>
   </div>
-  <hr />
-  <div id="lines">
-    @for (var i = 0; i < Model.Lines.Count; i++)
-    {
-      <div class="row g-2 mb-2 line">
-        <div class="col-md-6"><select name="Lines[@i].ItemId" class="form-select item">
-          <option value="0">-- item --</option>
-          @foreach (var it in Model.Items) { <option value="@it.Id" selected="@(Model.Lines[i].ItemId==it.Id)">@it.PartNumber - @it.ItemName</option> }
-        </select></div>
-        <div class="col-md-3"><input name="Lines[@i].Qty" type="number" min="1" class="form-control qty" value="@(Model.Lines[i].Qty==0?"":Model.Lines[i].Qty.ToString())" placeholder="Qty" /></div>
-        <div class="col-md-3 fifo small text-muted"></div>
+  <a asp-action="Index" asp-route-date="@Model.DeliveryDate.ToString("yyyy-MM-dd")" class="btn btn-outline-secondary btn-sm px-3 d-flex align-items-center gap-1">
+    <i class="bi bi-arrow-left"></i> Kembali ke Daftar DO
+  </a>
+</div>
+
+<form asp-action="Create" method="post" class="modern-card">
+  <div class="card-header-clean">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-truck text-primary"></i>
+      <span>Informasi Dokumen Pengiriman</span>
+    </div>
+  </div>
+  
+  <div class="p-3 p-md-4">
+    <div asp-validation-summary="All" class="alert alert-danger py-2 @(ViewData.ModelState.IsValid ? "d-none" : "")" style="border-radius: 10px; font-size: 0.88rem;"></div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <label class="form-label">Nama Pelanggan (Customer) <span class="text-danger">*</span></label>
+        <div class="input-group">
+          <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-person"></i></span>
+          <input asp-for="CustomerName" class="form-control border-start-0" list="cust" placeholder="Pilih / ketik nama pelanggan" required />
+          <datalist id="cust">
+            <option value="Astra Otoparts" />
+            <option value="PDC Karawang" />
+            <option value="PT Century Batteries Indonesia" />
+            <option value="Distributor Sparepart Mandiri" />
+          </datalist>
+        </div>
       </div>
-    }
+
+      <div class="col-md-4">
+        <label class="form-label">Tanggal Muat / Kirim <span class="text-danger">*</span></label>
+        <div class="input-group">
+          <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-calendar-event"></i></span>
+          <input asp-for="DeliveryDate" type="date" class="form-control border-start-0" required />
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Jendela Waktu Ritase (Heijunka) <span class="text-danger">*</span></label>
+        <div class="input-group">
+          <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-clock"></i></span>
+          <select asp-for="Ritase" class="form-select border-start-0">
+            @foreach (var r in Ritases.All)
+            {
+              var current = Model.RitaseLoad[r];
+              var isFull = current >= IDispatchService.MaxDoPerRitase;
+              <option value="@r" disabled="@isFull">
+                @r &mdash; Terisi @current / @IDispatchService.MaxDoPerRitase DO @(isFull ? "[PENUH]" : "")
+              </option>
+            }
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 pt-3 border-top">
+      <div>
+        <h6 class="fw-bold mb-0"><i class="bi bi-list-check text-primary me-1"></i> Rincian Item Permintaan Pengiriman</h6>
+        <small class="text-muted">Sistem secara otomatis akan menghitung rekomendasi lot FIFO tertua di sisi kanan.</small>
+      </div>
+      <button type="button" id="addLine" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1">
+        <i class="bi bi-plus-circle"></i> Tambah Item
+      </button>
+    </div>
+
+    <div id="lines" class="d-flex flex-column gap-3 mb-4">
+      @for (var i = 0; i < Model.Lines.Count; i++)
+      {
+        <div class="p-3 rounded-3 border bg-light line-row">
+          <div class="row g-3 align-items-start">
+            <div class="col-md-5">
+              <label class="form-label small text-muted">Pilih Part Baterai</label>
+              <select name="Lines[@i].ItemId" class="form-select item" required>
+                <option value="0">-- Pilih Part Baterai --</option>
+                @foreach (var it in Model.Items)
+                {
+                  <option value="@it.Id" selected="@(Model.Lines[i].ItemId == it.Id)">
+                    @it.PartNumber &mdash; @it.ItemName
+                  </option>
+                }
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small text-muted">Jumlah Permintaan (Qty)</label>
+              <input name="Lines[@i].Qty" type="number" min="1" class="form-control qty" value="@(Model.Lines[i].Qty == 0 ? "" : Model.Lines[i].Qty.ToString())" placeholder="Unit pesanan" required />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small text-muted">Rekomendasi Alokasi FIFO</label>
+              <div class="fifo-box p-2 bg-white rounded border small text-muted" style="min-height: 42px;">
+                <span class="text-muted fst-italic">Pilih item &amp; isi qty untuk kalkulasi stok...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+      <a class="btn btn-outline-secondary px-4" asp-action="Index">Batal</a>
+      <button type="submit" class="btn btn-primary px-4 d-flex align-items-center gap-2">
+        <i class="bi bi-check-lg"></i> Simpan Rencana Kirim
+      </button>
+    </div>
   </div>
-  <button type="button" id="addLine" class="btn btn-outline-secondary btn-sm mb-3">+ Tambah item</button>
-  <div class="small text-muted mb-3">Rekomendasi FIFO (lot tertua, tanpa LOW_VOLTAGE) tampil di sisi kanan tiap baris.</div>
-  <button class="btn btn-primary">Simpan Rencana</button> <a class="btn btn-link" asp-action="Index">Batal</a>
-</div></form>
+</form>
+
 @section Scripts {
 <script>
-  var idx = $('#lines .line').length;
-  function fifo($row) {
-    var id = $row.find('.item').val(), q = $row.find('.qty').val();
-    if (!id || id == 0 || !q) { $row.find('.fifo').text(''); return; }
+  let idx = $('#lines .line-row').length;
+
+  function fetchFifo($row) {
+    const id = $row.find('.item').val();
+    const q = $row.find('.qty').val();
+    const $box = $row.find('.fifo-box');
+
+    if (!id || id === '0' || !q) {
+      $box.html('<span class="text-muted fst-italic">Pilih item &amp; isi qty untuk kalkulasi stok...</span>');
+      return;
+    }
+
+    $box.html('<div class="spinner-border spinner-border-sm text-primary" role="status"></div> Menghitung alokasi FIFO...');
+
     $.getJSON('/Dispatch/Fifo', { itemId: id, qty: q }, function (rows) {
-      var tot = rows.reduce(function (a, r) { return a + r.quantity; }, 0);
-      var html = rows.map(function (r) { return r.lotNumber + ' @@ ' + r.location + ' (' + r.quantity + ')'; }).join('<br>');
-      if (tot < q) html += '<br><span class="text-danger">Stok kurang ' + (q - tot) + '</span>';
-      $row.find('.fifo').html(html);
+      const tot = rows.reduce((a, r) => a + r.quantity, 0);
+      if (rows.length === 0) {
+        $box.html('<span class="text-danger fw-bold"><i class="bi bi-x-circle"></i> Stok tidak tersedia!</span>');
+        return;
+      }
+
+      let html = '<div class="d-flex flex-column gap-1">';
+      rows.forEach(r => {
+        html += `<div><span class="badge bg-primary text-white me-1"><i class="bi bi-geo-alt"></i> ${r.location}</span> <strong>Lot ${r.lotNumber}</strong>: ambil <strong>${r.quantity}</strong> unit <small class="text-muted">(${r.productionDate})</small></div>`;
+      });
+
+      if (tot < q) {
+        html += `<div class="text-danger fw-bold mt-1"><i class="bi bi-exclamation-triangle"></i> Stok kurang ${q - tot} unit!</div>`;
+      }
+      html += '</div>';
+
+      $box.html(html);
+    }).fail(function () {
+      $box.html('<span class="text-danger">Gagal mengambil data stok.</span>');
     });
   }
-  $('#lines').on('change input', '.item, .qty', function () { fifo($(this).closest('.line')); });
+
+  $('#lines').on('change input', '.item, .qty', function () {
+    fetchFifo($(this).closest('.line-row'));
+  });
+
   $('#addLine').on('click', function () {
-    var $c = $('#lines .line').first().clone();
-    $c.find('select').attr('name', 'Lines[' + idx + '].ItemId').val(0);
-    $c.find('input').attr('name', 'Lines[' + idx + '].Qty').val('');
-    $c.find('.fifo').text(''); idx++; $('#lines').append($c);
+    const $clone = $('#lines .line-row').first().clone();
+    $clone.find('select').attr('name', `Lines[${idx}].ItemId`).val('0');
+    $clone.find('input').attr('name', `Lines[${idx}].Qty`).val('');
+    $clone.find('.fifo-box').html('<span class="text-muted fst-italic">Pilih item &amp; isi qty untuk kalkulasi stok...</span>');
+    idx++;
+    $('#lines').append($clone);
   });
 </script>
 }

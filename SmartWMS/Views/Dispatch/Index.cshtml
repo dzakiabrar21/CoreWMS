@@ -1,51 +1,152 @@
 @model List<Delivery>
 @{
-  ViewData["Title"] = "Dispatch";
+  ViewData["Title"] = "Heijunka Dispatch";
   var date = (DateOnly)ViewBag.Date;
   var load = (Dictionary<string, int>)ViewBag.Load;
 }
-<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-  <h3 class="mb-0">Heijunka &amp; Outbound Dispatch</h3>
-  <div class="d-flex gap-2">
-    <form method="get" class="d-flex gap-2"><input type="date" name="date" value="@date.ToString("yyyy-MM-dd")" class="form-control" onchange="this.form.submit()" /></form>
-    <a class="btn btn-primary" asp-action="Create" asp-route-date="@date.ToString("yyyy-MM-dd")">+ Buat Rencana Kirim</a>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+  <div>
+    <h3 class="fw-bold mb-1" style="letter-spacing: -0.03em;">Heijunka &amp; Outbound Dispatch</h3>
+    <p class="text-muted mb-0 small"><i class="bi bi-truck me-1"></i> Penjadwalan Ritase Muat Baterai &amp; Terminal Poka-Yoke Loading Verification</p>
+  </div>
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <form method="get" class="d-flex align-items-center gap-2 bg-white p-1 rounded-3 border">
+      <span class="ps-2 text-muted small"><i class="bi bi-calendar-date"></i> Tanggal:</span>
+      <input type="date" name="date" value="@date.ToString("yyyy-MM-dd")" class="form-control form-control-sm border-0 bg-light" style="width: 145px;" onchange="this.form.submit()" />
+    </form>
+    <a class="btn btn-primary d-flex align-items-center gap-2" asp-action="Create" asp-route-date="@date.ToString("yyyy-MM-dd")">
+      <i class="bi bi-plus-lg"></i> Buat Rencana Kirim
+    </a>
   </div>
 </div>
-<ul class="nav nav-tabs" role="tablist">
+
+<!-- SEGMENTED RITASE TABS -->
+<div class="nav-pills-modern mb-3" role="tablist">
   @for (var i = 0; i < Ritases.All.Length; i++)
   {
     var r = Ritases.All[i];
-    <li class="nav-item"><button class="nav-link @(i==0?"active":"")" data-bs-toggle="tab" data-bs-target="#rit@(i)" type="button">@r <span class="badge bg-secondary">@load[r]/@IDispatchService.MaxDoPerRitase</span></button></li>
+    var currentLoad = load[r];
+    var isFull = currentLoad >= IDispatchService.MaxDoPerRitase;
+    var badgeClass = isFull ? "bg-danger text-white" : currentLoad > 0 ? "bg-primary text-white" : "bg-light text-muted border";
+
+    <button class="nav-link @(i==0 ? "active" : "") d-flex align-items-center gap-2" data-bs-toggle="tab" data-bs-target="#rit@(i)" type="button">
+      <i class="bi bi-clock"></i>
+      <span>@r</span>
+      <span class="badge @badgeClass" style="font-size: 0.72rem; border-radius: 6px;">@currentLoad / @IDispatchService.MaxDoPerRitase DO</span>
+    </button>
   }
-</ul>
-<div class="tab-content border border-top-0 bg-white p-3 rounded-bottom">
+</div>
+
+<div class="tab-content">
 @for (var i = 0; i < Ritases.All.Length; i++)
 {
   var r = Ritases.All[i];
   var rows = Model.Where(d => d.Ritase == r).ToList();
-  <div class="tab-pane fade @(i==0?"show active":"")" id="rit@(i)">
-  @if (rows.Count == 0) { <p class="text-muted mb-0">Belum ada pengiriman.</p> }
-  else {
-    <table class="table align-middle mb-0"><thead><tr><th>DO</th><th>Pelanggan</th><th>Item</th><th>Status</th><th></th></tr></thead><tbody>
-    @foreach (var d in rows)
-    {
-      var cls = d.Status switch { "COMPLETED" => "success", "IN_PROGRESS" => "primary", "CANCELLED" => "secondary", _ => "info" };
-      <tr><td>@d.DONumber</td><td>@d.CustomerName</td>
-          <td>@foreach (var x in d.Details) { <div class="small">@x.Item.PartNumber: @x.QtyLoaded/@x.QtyRequested</div> }</td>
-          <td><span class="badge bg-@cls">@d.Status</span></td>
-          <td class="text-end">
-          @if (d.Status == DoStatus.Planned || d.Status == DoStatus.InProgress)
-          {
-            <a class="btn btn-sm btn-success" href="/Dispatch/ScanLoading/@d.Id">Mulai Poka-Yoke Scan</a>
-          }
-          @if (d.Status == DoStatus.Planned)
-          {
-            <form asp-action="Cancel" asp-route-id="@d.Id" method="post" class="d-inline"><button class="btn btn-sm btn-outline-danger">Batal</button></form>
-          }
-          </td></tr>
-    }
-    </tbody></table>
-  }
+
+  <div class="tab-pane fade @(i==0 ? "show active" : "")" id="rit@(i)">
+    <div class="modern-card">
+      @if (rows.Count == 0)
+      {
+        <div class="text-center py-5">
+          <div class="text-muted mb-2"><i class="bi bi-inbox fs-1"></i></div>
+          <h6 class="fw-bold text-muted">Belum ada pengiriman di @r</h6>
+          <p class="text-muted small">Klik tombol "Buat Rencana Kirim" untuk menambahkan jadwal DO pada ritase ini.</p>
+        </div>
+      }
+      else
+      {
+        <div class="table-responsive">
+          <table class="table table-modern align-middle mb-0">
+            <thead>
+              <tr>
+                <th>No. Delivery Order</th>
+                <th>Pelanggan</th>
+                <th>Rincian Item &amp; Progres Muat</th>
+                <th>Status DO</th>
+                <th class="text-end">Aksi Verifikasi</th>
+              </tr>
+            </thead>
+            <tbody>
+            @foreach (var d in rows)
+            {
+              var statusClass = d.Status switch {
+                DoStatus.Completed => "safe",
+                DoStatus.InProgress => "warning",
+                DoStatus.Cancelled => "text-muted bg-light border",
+                _ => "info"
+              };
+              var statusIcon = d.Status switch {
+                DoStatus.Completed => "bi-check-all text-success",
+                DoStatus.InProgress => "bi-arrow-repeat text-warning",
+                DoStatus.Cancelled => "bi-x-circle text-muted",
+                _ => "bi-clock text-primary"
+              };
+
+              <tr>
+                <td>
+                  <div class="fw-bold fs-6 text-primary d-flex align-items-center gap-2">
+                    <i class="bi bi-file-earmark-text"></i> @d.DONumber
+                  </div>
+                  <small class="text-muted">Dibuat: @d.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                </td>
+                <td>
+                  <span class="fw-semibold">@d.CustomerName</span>
+                </td>
+                <td>
+                  <div class="d-flex flex-column gap-1">
+                    @foreach (var x in d.Details)
+                    {
+                      var isDone = x.QtyLoaded >= x.QtyRequested;
+                      <div class="d-flex align-items-center gap-2 small">
+                        <span class="fw-bold">@x.Item.PartNumber:</span>
+                        <span class="badge @(isDone ? "bg-success" : "bg-light text-dark border")">
+                          @x.QtyLoaded / @x.QtyRequested unit
+                        </span>
+                        @if (isDone)
+                        {
+                          <i class="bi bi-check-circle-fill text-success" title="Lengkap"></i>
+                        }
+                      </div>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <span class="status-pill @statusClass">
+                    <i class="bi @statusIcon"></i> @d.Status
+                  </span>
+                </td>
+                <td class="text-end">
+                  <div class="d-inline-flex gap-2">
+                    @if (d.Status == DoStatus.Planned || d.Status == DoStatus.InProgress)
+                    {
+                      <a class="btn btn-sm btn-success d-flex align-items-center gap-1" href="/Dispatch/ScanLoading/@d.Id">
+                        <i class="bi bi-upc-scan"></i> Poka-Yoke Scan
+                      </a>
+                    }
+                    @if (d.Status == DoStatus.Planned)
+                    {
+                      <form asp-action="Cancel" asp-route-id="@d.Id" method="post" class="d-inline" onsubmit="return confirm('Batalkan rencana pengiriman ini?');">
+                        <button class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">
+                          <i class="bi bi-trash"></i> Batal
+                        </button>
+                      </form>
+                    }
+                    @if (d.Status == DoStatus.Completed)
+                    {
+                      <span class="badge bg-light text-success border px-3 py-2 d-inline-flex align-items-center gap-1">
+                        <i class="bi bi-patch-check-fill"></i> Muat Selesai
+                      </span>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
   </div>
 }
 </div>

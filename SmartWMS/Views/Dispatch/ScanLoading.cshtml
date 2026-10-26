@@ -1,36 +1,135 @@
 @model ScanLoadingVm
-@{ ViewData["Title"] = "Poka-Yoke Scan"; }
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h3 class="mb-0">Poka-Yoke Loading: @Model.Delivery.DONumber <small class="text-muted fs-6">@Model.Delivery.CustomerName &middot; @Model.Delivery.Ritase</small></h3>
-  <a asp-action="Index" asp-route-date="@Model.Delivery.DeliveryDate.ToString("yyyy-MM-dd")" class="btn btn-outline-secondary btn-sm">Kembali</a>
+@{
+  ViewData["Title"] = "Poka-Yoke Scan Loading";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+  <div>
+    <div class="d-flex align-items-center gap-2">
+      <h3 class="fw-bold mb-0" style="letter-spacing: -0.03em;">Poka-Yoke Loading Terminal</h3>
+      <span class="badge bg-primary px-3 py-2 fs-6">@Model.Delivery.DONumber</span>
+    </div>
+    <p class="text-muted mb-0 small mt-1">
+      <i class="bi bi-person me-1"></i> Pelanggan: <strong>@Model.Delivery.CustomerName</strong> &middot; 
+      <i class="bi bi-clock me-1"></i> Ritase: <strong>@Model.Delivery.Ritase</strong> &middot;
+      <i class="bi bi-calendar-event me-1"></i> Tanggal: <strong>@Model.Delivery.DeliveryDate.ToString("dd MMMM yyyy")</strong>
+    </p>
+  </div>
+  <a asp-action="Index" asp-route-date="@Model.Delivery.DeliveryDate.ToString("yyyy-MM-dd")" class="btn btn-outline-secondary btn-sm px-3 d-flex align-items-center gap-1">
+    <i class="bi bi-arrow-left"></i> Kembali ke Dispatch
+  </a>
 </div>
-<div class="row g-3">
+
+<div class="row g-4">
+  <!-- SCANNER HUD COLUMN -->
   <div class="col-lg-7">
-    <div class="card shadow-sm mb-3"><div class="card-body">
-      <label class="form-label">Scan / ketik barcode (Part Number atau Lot Number)</label>
-      <div class="input-group input-group-lg">
-        <input id="barcode" class="form-control" autofocus autocomplete="off" />
-        <input id="qty" type="number" min="1" value="1" class="form-control" style="max-width:90px" title="Qty sublot" />
-        <button id="btnScan" class="btn btn-primary">Scan</button>
+    <div class="scan-terminal mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <label class="form-label text-light mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-upc-scan text-primary fs-5"></i>
+          <span>Pindai Barcode (Part No. atau No. Lot)</span>
+        </label>
+        <span class="badge bg-secondary text-light">AUTOFOCUS ACTIVE</span>
       </div>
-      <div id="indicator" class="rounded text-center text-white mt-3 d-flex align-items-center justify-content-center fs-4 fw-bold bg-secondary" style="height:140px">MENUNGGU SCAN</div>
-    </div></div>
-    <div class="card shadow-sm"><div class="card-header">Progres Muat</div><div class="card-body" id="progress">
-      @foreach (var l in Model.Lines)
-      {
-        <div class="mb-3" data-item="@l.ItemId"><div class="d-flex justify-content-between"><strong>@l.PartNumber</strong><span class="cnt">@l.Loaded / @l.Requested</span></div>
-          <div class="progress" style="height:18px"><div class="progress-bar" style="width:@(l.Requested==0?0:l.Loaded*100/l.Requested)%"></div></div></div>
-      }
-    </div></div>
+
+      <div class="input-group input-group-lg mb-3">
+        <input id="barcode" class="form-control form-control-lg bg-dark text-white border-secondary" placeholder="Scan atau ketik barcode di sini..." autofocus autocomplete="off" style="font-family: monospace; font-size: 1.25rem; letter-spacing: 0.05em;" />
+        <input id="qty" type="number" min="1" value="1" class="form-control bg-dark text-white border-secondary text-center" style="max-width: 90px;" title="Qty Sublot" />
+        <button id="btnScan" class="btn btn-primary px-4 fw-bold">
+          <i class="bi bi-qr-code"></i> SCAN
+        </button>
+      </div>
+
+      <!-- BIG HUD INDICATOR -->
+      <div id="indicator" class="scanner-indicator idle">
+        <i class="bi bi-broadcast fs-2 mb-1"></i>
+        <span>MENUNGGU PEMINDAIAN BARCODE</span>
+        <small class="fw-normal fs-6 text-muted mt-1">Gunakan barcode scanner atau ketik lalu tekan Enter</small>
+      </div>
+    </div>
+
+    <!-- PROGRES MUAT ITEMS -->
+    <div class="modern-card">
+      <div class="card-header-clean">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-battery-charging text-primary"></i>
+          <span>Status Akumulasi Pemuatan Barang</span>
+        </div>
+        <span class="badge bg-light text-dark border">Poka-Yoke Anti-Salah</span>
+      </div>
+      <div class="p-3 p-md-4" id="progress">
+        @foreach (var l in Model.Lines)
+        {
+          var pct = l.Requested == 0 ? 0 : Math.Round((double)l.Loaded * 100 / l.Requested);
+          var isDone = l.Loaded >= l.Requested;
+
+          <div class="mb-3 line-progress" data-item="@l.ItemId">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <div>
+                <strong class="fs-6">@l.PartNumber</strong>
+                <small class="text-muted ms-2">@l.ItemName</small>
+              </div>
+              <div>
+                <span class="cnt fw-bold fs-6">@l.Loaded / @l.Requested</span>
+                <small class="text-muted">unit</small>
+              </div>
+            </div>
+            <div class="progress" style="height: 12px; border-radius: 9999px; background: #e2e8f0;">
+              <div class="progress-bar @(isDone ? "bg-success" : "bg-primary")" style="width: @pct%; transition: width 0.4s ease;"></div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
   </div>
+
+  <!-- REKOMENDASI FIFO CHECKLIST -->
   <div class="col-lg-5">
-    <div class="card shadow-sm"><div class="card-header">Rekomendasi Pengambilan FIFO</div>
-      <ul class="list-group list-group-flush">
-      @foreach (var f in Model.Fifo) { <li class="list-group-item small"><strong>@f.PartNumber</strong> &mdash; Lot @f.LotNumber @@ <strong>@f.Location</strong> &middot; ambil @f.Quantity &middot; prod @f.ProductionDate.ToString("dd/MM/yy")</li> }
-      @if (!Model.Fifo.Any()) { <li class="list-group-item text-muted small">Tidak ada sisa pengambilan.</li> }
-      </ul></div>
+    <div class="modern-card">
+      <div class="card-header-clean">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-signpost-split text-primary"></i>
+          <span>Rekomendasi Pengambilan FIFO</span>
+        </div>
+        <span class="badge bg-success-subtle text-success border border-success-subtle">Prioritas Terlama</span>
+      </div>
+      <div class="p-3">
+        <p class="small text-muted mb-3">
+          <i class="bi bi-info-circle me-1"></i> Sistem mewajibkan operator mengambil baterai dari lot produksi paling awal terlebih dahulu.
+        </p>
+
+        <div class="d-flex flex-column gap-2" id="fifoList">
+          @if (!Model.Fifo.Any())
+          {
+            <div class="text-center py-4 text-muted">
+              <i class="bi bi-check2-all fs-2 text-success"></i>
+              <div class="fw-semibold mt-1">Seluruh pengambilan telah selesai.</div>
+            </div>
+          }
+          @foreach (var f in Model.Fifo)
+          {
+            <div class="p-3 rounded-3 border bg-light d-flex justify-content-between align-items-center">
+              <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <span class="badge bg-primary">@f.PartNumber</span>
+                  <span class="badge bg-dark"><i class="bi bi-geo-alt"></i> @f.Location</span>
+                </div>
+                <div class="small">
+                  <strong>Lot: @f.LotNumber</strong> &middot; Tgl Prod: @f.ProductionDate.ToString("dd/MM/yyyy")
+                </div>
+              </div>
+              <div class="text-end">
+                <div class="fs-5 fw-bold text-primary">@f.Quantity</div>
+                <div class="text-muted" style="font-size: 0.72rem;">UNIT</div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
   </div>
 </div>
+
 @section Scripts {
 <script>var DO_ID = @Model.Delivery.Id;</script>
 <script src="~/js/scan.js"></script>

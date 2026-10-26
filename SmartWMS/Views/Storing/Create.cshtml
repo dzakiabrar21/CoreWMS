@@ -1,46 +1,234 @@
 @model StoringCreateVm
-@{ ViewData["Title"] = "Checksheet Storing"; }
-<h3 class="mb-3">Checksheet Storing (Inbound)</h3>
-<div class="row g-3">
-  <div class="col-lg-4">
-    <div class="card shadow-sm"><div class="card-body">
-      <form asp-action="Create" method="post">
-        <div asp-validation-summary="All" class="alert alert-danger py-2 @(ViewData.ModelState.IsValid ? "d-none" : "")"></div>
-        <div class="mb-2"><label class="form-label">Part Number</label>
-          <select asp-for="ItemId" class="form-select" required>
-            <option value="">-- pilih --</option>
-            @foreach (var i in Model.Items) { <option value="@i.Id">@i.PartNumber - @i.ItemName</option> }
-          </select></div>
-        <div class="mb-2"><label class="form-label">Lokasi Rak / Floor</label>
-          <select asp-for="LocationId" class="form-select" required>
-            <option value="">-- pilih --</option>
-            @foreach (var l in Model.Locations)
-            {
-              var rem = l.MaxCapacity - l.CurrentQty;
-              <option value="@l.Id" disabled="@(rem <= 0)">@l.LocationCode (@l.ZoneType) - sisa @rem</option>
-            }
-          </select></div>
-        <div class="mb-2"><label class="form-label">Nomor Lot</label><input asp-for="LotNumber" class="form-control" required /></div>
-        <div class="mb-2"><label class="form-label">Tanggal Produksi</label><input asp-for="ProductionDate" type="date" class="form-control" required /></div>
-        <div class="row">
-          <div class="col-6 mb-2"><label class="form-label">Voltase (V)</label><input asp-for="MeasuredVoltage" type="number" step="0.01" class="form-control" required /></div>
-          <div class="col-6 mb-3"><label class="form-label">Qty</label><input asp-for="Qty" type="number" min="1" class="form-control" required /></div>
-        </div>
-        <button class="btn btn-primary w-100">Simpan</button>
-      </form>
-    </div></div>
+@{
+  ViewData["Title"] = "Checksheet Storing Inbound";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+  <div>
+    <h3 class="fw-bold mb-1" style="letter-spacing: -0.03em;">Checksheet Storing (Inbound)</h3>
+    <p class="text-muted mb-0 small"><i class="bi bi-box-arrow-in-down me-1"></i> Form Input Penerimaan Baterai dari Lini Produksi &amp; Validasi Kapasitas Rak</p>
   </div>
-  <div class="col-lg-8">
-    <div class="card shadow-sm"><div class="card-header">Riwayat Penerimaan Terakhir</div>
-      <div class="table-responsive"><table class="table table-sm table-striped mb-0 align-middle">
-        <thead><tr><th>Waktu</th><th>Part</th><th>Lot</th><th>Lokasi</th><th>Prod.</th><th>V</th><th>Qty</th><th>Status</th></tr></thead>
-        <tbody>
-        @foreach (var r in Model.Recent)
-        {
-          var cls = r.Status == StockStatus.Normal ? "success" : r.Status == StockStatus.Aging ? "warning text-dark" : "danger";
-          <tr><td>@r.ReceivedAt.ToString("dd/MM HH:mm")</td><td>@r.Item.PartNumber</td><td>@r.LotNumber</td><td>@r.Location.LocationCode</td>
-              <td>@r.ProductionDate.ToString("dd/MM/yy")</td><td>@r.MeasuredVoltage</td><td>@r.Quantity</td><td><span class="badge bg-@cls">@r.Status</span></td></tr>
-        }
-        </tbody></table></div></div>
+  <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary btn-sm px-3 d-flex align-items-center gap-1">
+    <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
+  </a>
+</div>
+
+<div class="row g-4">
+  <!-- FORM INPUT -->
+  <div class="col-lg-5 col-xl-4">
+    <div class="modern-card">
+      <div class="card-header-clean">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-pencil-square text-primary"></i>
+          <span>Form Input Baterai</span>
+        </div>
+      </div>
+      <div class="p-3 p-md-4">
+        <form asp-action="Create" method="post" id="formStoring">
+          <div asp-validation-summary="All" class="alert alert-danger py-2 @(ViewData.ModelState.IsValid ? "d-none" : "")" style="border-radius: 10px; font-size: 0.88rem;"></div>
+
+          <div class="mb-3">
+            <label class="form-label d-flex justify-content-between">
+              <span>Part Number (SKU)</span>
+              <span class="text-danger small">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-upc-scan"></i></span>
+              <select asp-for="ItemId" id="itemSelect" class="form-select border-start-0" required>
+                <option value="">-- Pilih Part Baterai --</option>
+                @foreach (var i in Model.Items)
+                {
+                  <option value="@i.Id" data-min-v="@i.MinVoltageThreshold" data-max-days="@i.MaxShelfLifeDays">
+                    @i.PartNumber &mdash; @i.ItemName
+                  </option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label d-flex justify-content-between">
+              <span>Lokasi Penyimpanan</span>
+              <span class="text-danger small">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-geo-alt"></i></span>
+              <select asp-for="LocationId" class="form-select border-start-0" required>
+                <option value="">-- Pilih Slot Rak / Lantai --</option>
+                @foreach (var l in Model.Locations)
+                {
+                  var rem = l.MaxCapacity - l.CurrentQty;
+                  var isFull = rem <= 0;
+                  <option value="@l.Id" disabled="@isFull">
+                    @l.LocationCode (@l.ZoneType) &mdash; Sisa @rem unit @(isFull ? "[PENUH]" : "")
+                  </option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label d-flex justify-content-between">
+              <span>Nomor Lot Produksi</span>
+              <span class="text-danger small">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-tag"></i></span>
+              <input asp-for="LotNumber" class="form-control border-start-0 text-uppercase" placeholder="misal: LOT-NS40-001" required />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label d-flex justify-content-between">
+              <span>Tanggal Produksi</span>
+              <span class="text-danger small">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-calendar-event"></i></span>
+              <input asp-for="ProductionDate" id="prodDate" type="date" class="form-control border-start-0" required />
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label">Voltase (V)</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-lightning-charge"></i></span>
+                <input asp-for="MeasuredVoltage" id="voltage" type="number" step="0.01" class="form-control border-start-0" placeholder="12.60" required />
+              </div>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Jumlah (Qty)</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-123"></i></span>
+                <input asp-for="Qty" type="number" min="1" class="form-control border-start-0" placeholder="Qty" required />
+              </div>
+            </div>
+          </div>
+
+          <!-- ESTIMASI STATUS PREVIEW -->
+          <div class="bg-light p-3 rounded-3 mb-3 border text-center">
+            <div class="small text-muted mb-1">Status Kualitas Estimasi:</div>
+            <span id="statusBadge" class="status-pill safe fs-6 px-3 py-1">
+              <i class="bi bi-check-circle-fill"></i> NORMAL
+            </span>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 py-2 d-flex align-items-center justify-content-center gap-2">
+            <i class="bi bi-check2-circle fs-5"></i> Simpan Transaksi Storing
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIWAYAT PENERIMAAN -->
+  <div class="col-lg-7 col-xl-8">
+    <div class="modern-card">
+      <div class="card-header-clean">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-clock-history text-primary"></i>
+          <span>Riwayat Penerimaan Terakhir</span>
+        </div>
+        <span class="badge bg-light text-dark border">15 Transaksi Terbaru</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-modern align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Waktu Masuk</th>
+              <th>Part / Item</th>
+              <th>No. Lot</th>
+              <th>Lokasi</th>
+              <th>Voltase</th>
+              <th>Qty</th>
+              <th>Status Mutu</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (!Model.Recent.Any())
+            {
+              <tr>
+                <td colspan="7" class="text-center py-4 text-muted">Belum ada riwayat penerimaan barang.</td>
+              </tr>
+            }
+            @foreach (var r in Model.Recent)
+            {
+              var statusPill = r.Status == StockStatus.Normal ? "safe" : r.Status == StockStatus.Aging ? "warning" : "danger";
+              var statusIcon = r.Status == StockStatus.Normal ? "bi-check-circle-fill text-success" : r.Status == StockStatus.Aging ? "bi-exclamation-triangle-fill text-warning" : "bi-shield-x text-danger";
+              <tr>
+                <td class="text-muted small">
+                  <i class="bi bi-calendar3 me-1"></i>@r.ReceivedAt.ToString("dd/MM/yy HH:mm")
+                </td>
+                <td>
+                  <span class="fw-bold">@r.Item.PartNumber</span>
+                  <div class="text-muted small" style="font-size: 0.75rem;">@r.Item.ItemName</div>
+                </td>
+                <td>
+                  <code class="text-dark bg-light px-2 py-1 rounded">@r.LotNumber</code>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border">
+                    <i class="bi bi-geo-alt-fill text-primary me-1"></i>@r.Location.LocationCode
+                  </span>
+                </td>
+                <td>
+                  <span class="fw-semibold @(r.MeasuredVoltage < 12.4m ? "text-danger" : "text-success")">
+                    @r.MeasuredVoltage.ToString("F2") V
+                  </span>
+                </td>
+                <td>
+                  <span class="fw-bold fs-6">@r.Quantity</span> <small class="text-muted">unit</small>
+                </td>
+                <td>
+                  <span class="status-pill @statusPill">
+                    <i class="bi @statusIcon"></i> @r.Status
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
+
+@section Scripts {
+<script>
+  function updateStatusEstimator() {
+    const $opt = $('#itemSelect option:selected');
+    const minV = parseFloat($opt.data('min-v')) || 12.40;
+    const maxDays = parseInt($opt.data('max-days')) || 90;
+
+    const voltage = parseFloat($('#voltage').val()) || 12.60;
+    const prodVal = $('#prodDate').val();
+
+    let status = 'NORMAL';
+    let pillClass = 'safe';
+    let icon = 'bi-check-circle-fill';
+
+    if (voltage < minV) {
+      status = 'LOW_VOLTAGE';
+      pillClass = 'danger';
+      icon = 'bi-shield-x';
+    } else if (prodVal) {
+      const prod = new Date(prodVal);
+      const today = new Date();
+      const diffDays = Math.floor((today - prod) / (1000 * 60 * 60 * 24));
+      if (diffDays > maxDays) {
+        status = 'AGING_ALERT';
+        pillClass = 'warning';
+        icon = 'bi-exclamation-triangle-fill';
+      }
+    }
+
+    $('#statusBadge')
+      .removeClass('safe warning danger')
+      .addClass(pillClass)
+      .html(`<i class="bi ${icon}"></i> ${status}`);
+  }
+
+  $('#itemSelect, #voltage, #prodDate').on('change input', updateStatusEstimator);
+</script>
+}
